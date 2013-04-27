@@ -1,0 +1,9 @@
+hemul
+doc.c
+files.s3
+tags
+*.o
+*.a
+*.so
+*.swp
+*.*~

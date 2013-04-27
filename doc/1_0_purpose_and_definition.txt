@@ -1,0 +1,9 @@
+Purpose & definition
+====================
+
+Hemul is a transparent emulator for re-playing recorded contents of a file.
+To be able to do that, file-contet must either contain time-stamps or flags
+must be given to simulate period times.
+
+Hemul behaviour is affected either by configuration file or by input
+arguments.
