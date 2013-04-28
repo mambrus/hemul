@@ -27,12 +27,15 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <getopt.h>
-
-#include "assert_np.h"
-
 #include <mtime.h>
 
+#include "assert_np.h"
+#include "hemul.h"
+
+
+#ifndef DEF_PERIOD
 #define DEF_PERIOD -1
+#endif
 
 #define xstr(S) str(S)
 #define str(S) #S
@@ -66,10 +69,13 @@ void help(FILE* file, int flags) {
 			"  -D, --documentation        Output full documentation, then exit\n"
 			"  -p, --period=ptime         Period-time in uS. -1 equals event-driven output.\n"
 			"                             Default period-time is [100000] uS\n"
-			"  -P, --pipe                 Output is a named pipe. Created if missing, requires -o\n"
+			"  -P, --pipe                 Output is a named pipe.\n"
+			"                             Created if missing, requires -o\n"
 			"  -o, --outfile=file-name    Output is sent to this file-name.\n"
+			"  -i, --infile=file-name     Input is received from this file-name.\n"
 			"  -v, --verbose              Produce verbose output. This flag lets you see how\n"
-			"                             sigs_file file is interpreted\n"
+			"  -R, --regex=string         Regex string to identify time-stamp\n"
+			"  -r, --regi=idx             Sub expression to use as time-stamp\n"
 			"  -h, --help                 Give this help list\n"
 			"  -u, --usage                Give a short usage message\n"
 			"  -V, --version              Print program version\n"
@@ -103,15 +109,6 @@ void help(FILE* file, int flags) {
 
 extern struct mtimemod_settings mtimemod_settings;
 
-/* General arguments */
-struct arguments
-{
-	int verbose;
-	int ptime;        
-	int debuglevel;
-	char *ofile;
-};
-
 /* Parse a single option. */
 static void parse_opt(
 	int key,
@@ -121,43 +118,52 @@ static void parse_opt(
 	extern const char hemul_doc[];
 
 	switch (key) {
-		case 'o':
-			arguments->ofile = arg;
+		case 'D':
+			printf("%s\n",hemul_doc);
+			exit(0);
+			break;
+		case 'u':
+			help(stdout, HELP_USAGE | HELP_EXIT);
+			break;
+		case 'h':
+			help(stdout, HELP_LONG | HELP_EXIT);
 			break;
 		case 'v':
 			arguments->verbose = 1;
 			mtimemod_settings.verbose = 1;
 			break;
-		case 'p':
-			arguments->ptime = arg ? atoi (arg) : -1;
+		case 'V':
+			help(stdout, HELP_VERSION | HELP_EXIT);
+			break;
+		case 'P':
+			arguments->piped_output = 1;
 			break;
 
 		case 'd':
 			arguments->debuglevel = arg ? atoi (arg) : 0;
 			mtimemod_settings.debuglevel = arguments->debuglevel;
 			break;
-		case 'D':
-			printf("%s\n",hemul_doc);
-			exit(0);
+		case 'p':
+			arguments->ptime = arg ? atoi (arg) : -1;
+			break;
+		case 'o':
+			arguments->ofilename = arg;
+			break;
+		case 'i':
+			arguments->ifilename = arg;
+			break;
+		case 'R':
+			arguments->ts_regex.str = arg;
+			break;
+		case 'r':
+			arguments->ts_regex.idx = arg ? atoi (arg) : -1;
 			break;
 
-		case 'u':
-			help(stdout, HELP_USAGE | HELP_EXIT);
-			break;
-
-		case 'h':
-			help(stdout, HELP_LONG | HELP_EXIT);
-			break;
 
 		case '?':
 			/* getopt_long already printed an error message. */
 			help(stderr, HELP_TRY | HELP_EXIT_ERR);
 			break;
-
-		case 'V':
-			help(stdout, HELP_VERSION | HELP_EXIT);
-			break;
-
 		default:
 			fprintf(stderr, "hemul: unrecognized option '-%c'\n", (char)key);
 			help(stderr, HELP_TRY | HELP_EXIT_ERR);
@@ -167,10 +173,14 @@ static void parse_opt(
 
 static struct option long_options[] = {
 	{"verbose",       no_argument,       0, 'v'},
+	{"cersion",       no_argument,       0, 'V'},
 	{"debuglevel",    required_argument, 0, 'd'},
 	{"period",        required_argument, 0, 'p'},
 	{"pipe",          no_argument,       0, 'P'},
 	{"outfile",       required_argument, 0, 'o'},
+	{"infile",        required_argument, 0, 'i'},
+	{"regex",         required_argument, 0, 'R'},
+	{"regi",          required_argument, 0, 'r'},
 	{"documentation", no_argument,       0, 'D'},
 	{"usage",         no_argument,       0, 'u'},
 	{"help",          no_argument,       0, 'h'},
@@ -178,23 +188,29 @@ static struct option long_options[] = {
 	{0, 0, 0, 0}
 };
 
+struct arguments arguments = {
+	.ptime          = DEF_PERIOD,
+	.debuglevel     = 0,
+	.piped_output   = 0,
+	.ofilename      = NULL,
+	.ifilename      = NULL,
+	.ts_regex       = {
+		.str        = NULL,
+		.idx        = 1,
+	},
+};
+
 int main(int argc, char **argv) {
-	struct arguments arguments;
-
-	arguments.verbose        = 0;
-	arguments.debuglevel     = 0;
-	arguments.ptime          = DEF_PERIOD;
-	arguments.ofile      = NULL;
-
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "s:vp:x:f:ld:DuhVRM:W:E:m:w:e:",
+		int c = getopt_long(argc, argv, "DuhvVPd:p:o:i",
 			long_options, &option_index);
 		/* Detect the end of the options. */
 		if (c == -1)
 			break;
 		parse_opt(c, optarg, &arguments);
 	}
+
 	/* Handle any remaining command line arguments (not options). */
 	if (optind < argc) {
 		perror("hemul: to many parameters\n");
@@ -202,7 +218,7 @@ int main(int argc, char **argv) {
 		help(stderr, HELP_TRY | HELP_EXIT_ERR);
 	}
 
-	//hemul_init(arguments.sigs_file, arguments.ptime);
+	assert_ext(hemul_init()==0);
 	return 0;
 }
 

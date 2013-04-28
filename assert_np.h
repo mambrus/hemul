@@ -40,6 +40,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 
 #ifndef NDEBUG
 #  define assert_ign assert
@@ -63,18 +64,21 @@ void _assertfail(char *assertstr, char *filestr, int line);
 #  define assert_ext(p) ((p) ? (void)0 : (void) _assertfail( \
 		#p, __FILE__, __LINE__ ) )
 
+
 /* Lazy error-handling. Careful using this. Assumes function invoked from
-accepts returning with code, and that the code means error */
-#  define assert_ret(p) (                                    \
-	{                                                        \
-		int rc = (p);                                        \
-                                                             \
-		rc ? (void)0 :                                       \
-		fprintf(ASSERT_ERROR_FILE,"_assert_ex %s (%s:%d)\n", \
-			#p, __FILE__, __LINE__ );                        \
-		fflush(ASSERT_ERROR_FILE);                           \
-		return rc;                                           \
-	}                                                        \
+accepts returning with code, and that the code means error*/
+#  define assert_ret(p) (                                        \
+	{                                                            \
+		int rc = (p);                                            \
+                                                                 \
+		if (!rc) {                                               \
+			fprintf(ASSERT_ERROR_FILE,"assert_ret %s (%s:%d). "  \
+				"errno: %d (%s)\n",                              \
+			 	#p, __FILE__, __LINE__, errno, strerror(errno)); \
+			fflush(ASSERT_ERROR_FILE);                           \
+			return EINVAL;                                       \
+		}                                                        \
+	}                                                            \
 )
 #endif
 #endif /* assert_np_h */
