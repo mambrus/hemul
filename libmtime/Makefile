@@ -105,18 +105,12 @@ endif
 %.o: %.c
 
 %.tmp: %.c Makefile
-	@$(RINFO) =t2========================================================
-	echo $*
-	echo $@
-	bash -c 'if [ ! -d ${@D} ]; then echo "-->>>> Creating directory: ${@D}"; mkdir -p ${@D}; fi'
 	gcc -MM $(CFLAGS) ${@:tmp=c} > ${@}
 
 %.d: %.tmp
-	@$(RINFO) =d2========================================================
 	cat ${@:d=tmp} | sed  -E 's/$*.c/$*.c $@/' > ${@}
 
 %.o: %.d Makefile
-	@$(RINFO) =o2========================================================
 	gcc -c $(CFLAGS) ${@:o=c} -o $@
 
 

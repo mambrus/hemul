@@ -13,8 +13,6 @@ LOCAL_SRC_FILES := \
    runengine.c \
    main.c
 
-RM := rm
-
 LOCAL_LIBS := \
    mtime
 
@@ -53,7 +51,7 @@ CFLAGS += -I ./include ${LOCAL_C_INCLUDES}
 CLEAN_MODS := $(patsubst %, $(MAKE) clean -C %;,$(LOCAL_SUBMODULES))
 UNINST_MODS := $(patsubst %, $(MAKE) uninstall -C %;,$(LOCAL_SUBMODULES))
 FOUND_CDEPS:= $(shell find . -name "*.d")
-RINFO := echo
+RM := rm
 .INTERMEDIATE: ${LOCAL_SRC_FILES:.c=.d}
 #.SECONDARY: ${LOCAL_SRC_FILES:.c=.tmp}
 #.INTERMEDIATE: ${LOCAL_SRC_FILES:.c=.tmp}
@@ -98,18 +96,12 @@ $(LOCAL_MODULE): Makefile $(LOCAL_SRC_FILES:c=o)
 %.o: %.c
 
 %.tmp: %.c Makefile
-	@$(RINFO) =t2========================================================
-	echo $*
-	echo $@
-	bash -c 'if [ ! -d ${@D} ]; then echo "-->>>> Creating directory: ${@D}"; mkdir -p ${@D}; fi'
 	gcc -MM $(CFLAGS) ${@:tmp=c} > ${@}
 
 %.d: %.tmp
-	@$(RINFO) =d2========================================================
 	cat ${@:d=tmp} | sed  -E 's/$*.c/$*.c $@/' > ${@}
 
 %.o: %.d Makefile
-	@$(RINFO) =o2========================================================
 	gcc -c $(CFLAGS) ${@:o=c} -o $@
 
 README_SCRIPT := \
