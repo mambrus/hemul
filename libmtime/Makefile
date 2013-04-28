@@ -39,17 +39,21 @@ CFLAGS += -O0 -g3 ${LOCAL_CFLAGS}
 CFLAGS += -I ./include -I ../ ${LOCAL_C_INCLUDES}
 CLEAN_MODS := $(patsubst %, $(MAKE) clean -C %;,$(LOCAL_SUBMODULES))
 UNINST_MODS := $(patsubst %, $(MAKE) uninstall -C %;,$(LOCAL_SUBMODULES))
+RINFO := echo
+.INTERMEDIATE: ${LOCAL_SRC_FILES:.c=.d}
 
 ifdef LIB_DYNAMIC
     $(info Build will build and use it's libraries: dynamic )
     $(info To build/use static libs: unset LIB_DYNAMIC )
     LOCAL_MODULE := $(addsuffix .so, ${LOCAL_MODULE})
     MODULE_FLAGS := -shared
+    EXLIBS=$(shell ls lib/*.so)
 else
     $(info Build will build and use it's libraries: static )
     $(info To build all dynamic: export LIB_DYNAMIC='y' )
     LOCAL_MODULE := $(addsuffix .a, ${LOCAL_MODULE})
     MODULE_FLAGS := -static
+    EXLIBS=$(shell ls lib/*.a)
 endif
 
 LOCAL_MODULE := lib/${LOCAL_MODULE}
@@ -62,6 +66,8 @@ ${LOCAL_SUBMODULES}:
 clean:
 	$(CLEAN_MODS)
 	rm -f *.o
+	rm -f *.tmp
+	rm -f *.d
 	rm -f $(LOCAL_MODULE)
 	rm -f tags
 
@@ -72,12 +78,12 @@ uninstall:
 	rm -rf ${INSTALLDIR}/${LOCAL_MODULE}
 	bash -c '${INSTALLDIR}; rm ${EXHEADERS}'
 
-${INSTALLDIR}/${LOCAL_MODULE}: build
+${INSTALLDIR}/${LOCAL_MODULE}: ${EXLIBS} ${LOCAL_MODULE}
 	mkdir -p ${INSTALLDIR}/lib
 	rm -f ${INSTALLDIR}/${LOCAL_MODULE}
 	cp $(LOCAL_MODULE) ${INSTALLDIR}/${LOCAL_MODULE}
 
-${INSTALLDIR}/${EXHEADERS}: build ${EXHEADERS}
+${INSTALLDIR}/${EXHEADERS}: ${EXHEADERS}
 	mkdir -p $(shell dirname ${@})
 	rm -f ${@}
 	cp include/$(shell basename ${@}) ${@}
@@ -95,8 +101,26 @@ else
 endif
 	@echo ">>>> Build $(LOCAL_MODULE) success! <<<<"
 
-%.o: %.c Makefile
-	gcc -c $(CFLAGS) ${@:o=c} -o ${@}
+#Cancel out built-in implicit rule
+%.o: %.c
+
+%.tmp: %.c Makefile
+	@$(RINFO) =t2========================================================
+	echo $*
+	echo $@
+	bash -c 'if [ ! -d ${@D} ]; then echo "-->>>> Creating directory: ${@D}"; mkdir -p ${@D}; fi'
+	gcc -MM $(CFLAGS) ${@:tmp=c} > ${@}
+
+%.d: %.tmp
+	@$(RINFO) =d2========================================================
+	cat ${@:d=tmp} | sed  -E 's/$*.c/$*.c $@/' > ${@}
+
+%.o: %.d Makefile
+	@$(RINFO) =o2========================================================
+	gcc -c $(CFLAGS) ${@:o=c} -o $@
+
+
+include $(FOUND_CDEPS)
 
 #========================================================================
 else #First recursion level only executes this. Used for colorized output

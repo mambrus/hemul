@@ -8,7 +8,12 @@ include common.mk
 LOCAL_MODULE := hemul
 LOCAL_SRC_FILES := \
    doc.c \
+   init.c \
+   assert_np.c \
+   runengine.c \
    main.c
+
+RM := rm
 
 LOCAL_LIBS := \
    mtime
@@ -18,7 +23,8 @@ LOCAL_CFLAGS += -DNDEBUG
 LOCAL_C_INCLUDES += ${HOME}/include
 LOCAL_LDLIBS += ${HOME}/lib
 
-LOCAL_SUBMODULES := libmtime
+LOCAL_SUBMODULES := \
+   libmtime
 
 NDK_BUILD := ndk-build
 NDK_VARIABLES := \
@@ -46,6 +52,11 @@ CFLAGS += -O0 -g3 ${LOCAL_CFLAGS}
 CFLAGS += -I ./include ${LOCAL_C_INCLUDES}
 CLEAN_MODS := $(patsubst %, $(MAKE) clean -C %;,$(LOCAL_SUBMODULES))
 UNINST_MODS := $(patsubst %, $(MAKE) uninstall -C %;,$(LOCAL_SUBMODULES))
+FOUND_CDEPS:= $(shell find . -name "*.d")
+RINFO := echo
+.INTERMEDIATE: ${LOCAL_SRC_FILES:.c=.d}
+#.SECONDARY: ${LOCAL_SRC_FILES:.c=.tmp}
+#.INTERMEDIATE: ${LOCAL_SRC_FILES:.c=.tmp}
 
 build: ${LOCAL_SUBMODULES} tags README.md $(LOCAL_MODULE)
 all: install
@@ -56,32 +67,50 @@ ${LOCAL_SUBMODULES}:
 
 clean: common-clean
 	$(CLEAN_MODS)
-	rm -f *.o
-	rm -f $(LOCAL_MODULE)
-	rm -f tags
+	$(RM) -f *.o
+	$(RM) -f *.d
+	$(RM) -f *.tmp
+	$(RM) -f $(LOCAL_MODULE)
+	$(RM) -f tags
 
 install: ${INSTALLDIR}/bin/${LOCAL_MODULE}
 
 uninstall:
 	$(UNINST_MODS)
-	rm -rf ${INSTALLDIR}/bin/${LOCAL_MODULE}
+	$(RM) -rf ${INSTALLDIR}/bin/${LOCAL_MODULE}
 
 ${INSTALLDIR}/bin/${LOCAL_MODULE}: $(LOCAL_MODULE)
 	mkdir -p ${INSTALLDIR}/bin
-	rm -f ${INSTALLDIR}/bin/${LOCAL_MODULE}
+	$(RM) -f ${INSTALLDIR}/bin/${LOCAL_MODULE}
 	cp $(LOCAL_MODULE) ${INSTALLDIR}/bin/${LOCAL_MODULE}
 
 tags: $(shell ls *.[ch])
 	ctags --options=.cpatterns --exclude=@.cexclude -o tags -R *
 
 $(LOCAL_MODULE): Makefile $(LOCAL_SRC_FILES:c=o)
-	rm -f $(LOCAL_MODULE)
+	$(RM) -f $(LOCAL_MODULE)
 	gcc $(CFLAGS) $(MODULE_FLAGS) $(LOCAL_SRC_FILES:c=o) ${LOCAL_LIBS} -o ${@}
 	@echo "Remember for dev runs: export LD_LIBRARY_PATH=${INSTALLDIR}/lib"
 	@echo ">>>> Build $(LOCAL_MODULE) success! <<<<"
 
-%.o: %.c Makefile
-	gcc -c $(CFLAGS) ${@:o=c} -o ${@}
+
+#Cancel out built-in implicit rule
+%.o: %.c
+
+%.tmp: %.c Makefile
+	@$(RINFO) =t2========================================================
+	echo $*
+	echo $@
+	bash -c 'if [ ! -d ${@D} ]; then echo "-->>>> Creating directory: ${@D}"; mkdir -p ${@D}; fi'
+	gcc -MM $(CFLAGS) ${@:tmp=c} > ${@}
+
+%.d: %.tmp
+	@$(RINFO) =d2========================================================
+	cat ${@:d=tmp} | sed  -E 's/$*.c/$*.c $@/' > ${@}
+
+%.o: %.d Makefile
+	@$(RINFO) =o2========================================================
+	gcc -c $(CFLAGS) ${@:o=c} -o $@
 
 README_SCRIPT := \
     FS=$$(ls doc/* | sort); \
@@ -107,7 +136,7 @@ README_SCRIPT := \
 DOCFILES := $(shell ls doc/*)
 
 README.md: ${DOCFILES}
-	@rm -f ${@}
+	@$(RM) -f ${@}
 	@echo "Generaring file: README.md"
 	@${README_SCRIPT} > ${@}
 
@@ -116,6 +145,8 @@ android:
 
 android-clean: common-clean
 	$(NDK_BUILD) $(NDK_VARIABLES) clean
+
+include $(FOUND_CDEPS)
 
 #========================================================================
 else #First recursion level only executes this. Used for colorized output
