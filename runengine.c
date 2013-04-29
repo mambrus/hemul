@@ -20,15 +20,14 @@
 #include <stdio.h>
 #include <limits.h>
 #include <unistd.h>
+#include <time.h>
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <getopt.h>
 #include <mtime.h>
-
 #include "assert_np.h"
 #include "hemul.h"
 #include <regex.h>
@@ -41,6 +40,9 @@
 #define LINE_MAX 1024
 #endif
 
+/* This should be declared in time.h but isn't. Declared temporary here (FIX TBD)*/
+char *strptime(const char *buf, const char *format,
+       struct tm *tm);
 
 /* This thread takes what it's got in buffer when buf-len is reached. */
 void *output_pumper(void* inarg) {
@@ -72,7 +74,11 @@ int hemul_run() {
 		char err_str[80];
 		char time_str[80];
 		struct timeval last_time, curr_time, diff_time;
-		int first_round = 1;
+		int i,first_round = 1;
+		struct tm tm;
+		char *lstr;
+		int usec; /*Extra tempoary usec*/
+		time_t sepoch;
 
 		while (fgets(line, LINE_MAX, mod_hemul.in) != NULL) {
 			/* Find out how long time to usleep */
@@ -93,16 +99,47 @@ int hemul_run() {
 					 * or numerical epoc time). */
 					sscanf(time_str,"%d.%d",
 						(int*)&curr_time.tv_sec,
-						(int*)&curr_time.tv_usec); }
-					if (first_round) {
-						first_round = 0;
-						memcpy(&last_time, &curr_time,
-							sizeof(struct timeval));
+						(int*)&curr_time.tv_usec);
+				} else {
+					/* Format is given. I.e. time stamp-needs to be parsed
+					 * to be understood */
+
+					strptime("0","%s",&tm);
+					assert_ext( (lstr=strptime( time_str,
+						arguments.ts_format, &tm )) != NULL );
+					if (lstr[0]='.') {
+						/*
+						* Permit reading fraction of a second. Assume this to
+						* be microsecond (6 decimal). Adjust if not. Note, this
+						* is a hack-on to strptime wih wount parse fractions
+						* of a second (because struct tm has no field for
+						* it) and works only on time-stamps where decimal
+						* seconds are the last to be parsed.
+						*/
+						lstr++;
+						usec=atoi(lstr);
+						assert_ext(usec<1000000);
+						for (i=strnlen(lstr,6); i<6; i++ )
+							usec *= 10;
 					}
-					diff_time = tv_diff(&last_time,&curr_time);
+					/* Parsing is now ready. Transfer ts to curr_time*/
+					curr_time.tv_usec = usec;
+					sepoch = timegm(&tm);
+					assert_ext(sepoch != (time_t)(-1));
+					curr_time.tv_sec = sepoch;
+				}
+				if (first_round) {
+					first_round = 0;
 					memcpy(&last_time, &curr_time,
 						sizeof(struct timeval));
-					tv_sleep(&diff_time);
+				}
+				diff_time = tv_diff(&last_time,&curr_time);
+
+				assert_ext(diff_time.tv_sec>=0);
+
+				tv_sleep(&diff_time);
+				memcpy(&last_time, &curr_time,
+					sizeof(struct timeval));
 			}
 			/* Output the line */
 			fputs(line, mod_hemul.out);

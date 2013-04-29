@@ -76,6 +76,8 @@ void help(FILE* file, int flags) {
 			"  -v, --verbose              Produce verbose output. This flag lets you see how\n"
 			"  -R, --regex=string         Regex string to identify time-stamp\n"
 			"  -r, --regi=idx             Sub expression to use as time-stamp\n"
+			"  -F, --format=string        Format string describing the time-stamp. Follows \n"
+			"                             same convention as format for the 'date' command\n"
 			"  -h, --help                 Give this help list\n"
 			"  -u, --usage                Give a short usage message\n"
 			"  -V, --version              Print program version\n"
@@ -158,6 +160,9 @@ static void parse_opt(
 		case 'r':
 			arguments->ts_regex.idx = arg ? atoi (arg) : -1;
 			break;
+		case 'F':
+			arguments->ts_format = arg;
+			break;
 
 
 		case '?':
@@ -181,6 +186,7 @@ static struct option long_options[] = {
 	{"infile",        required_argument, 0, 'i'},
 	{"regex",         required_argument, 0, 'R'},
 	{"regi",          required_argument, 0, 'r'},
+	{"format",        required_argument, 0, 'F'},
 	{"documentation", no_argument,       0, 'D'},
 	{"usage",         no_argument,       0, 'u'},
 	{"help",          no_argument,       0, 'h'},
@@ -204,7 +210,7 @@ struct arguments arguments = {
 int main(int argc, char **argv) {
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "DuhvVPd:p:o:i:R:r:",
+		int c = getopt_long(argc, argv, "DuhvVPd:p:o:i:R:r:F:",
 			long_options, &option_index);
 		/* Detect the end of the options. */
 		if (c == -1)

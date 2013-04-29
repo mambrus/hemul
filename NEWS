@@ -19,4 +19,17 @@ A fixed time-interval replay can me done like this:
 
 ./hemul -i UART.txt -p1000000
 
+Tue Apr 30 00:20:07 CEST 2013
+---------1---------2---------3---------4---------5---------6---------7---------8
+HEMUL now understands strptime parseable time formats. Logs like these:
+01-01 01:58:11.014   375   375 I boot_progress_start: 11812
+01-01 01:58:11.872   375   375 I boot_progress_preload_start: 12670
+01-01 01:58:17.637   375   375 I boot_progress_preload_end: 18435
+01-01 01:58:17.752  1035  1064 I boot_progress_system_run: 18550
+01-01 01:58:17.902  1035  1064 I boot_progress_pms_start: 18700
+01-01 01:58:18.106  1035  1064 I boot_progress_pms_system_scan_start: 18904
+01-01 01:58:19.140  1035  1064 I boot_progress_pms_data_scan_start: 19939
+01-01 01:58:19.364  1035  1064 I boot_progress_pms_scan_end: 20163
 
+Are run f.ex. like this:
+./hemul -i ../sampler/data/events.txt -R'(..-.. ..:..:..\....)(.*)' -r1 -F'%m-%d %H:%M:%S'
