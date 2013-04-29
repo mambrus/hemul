@@ -1,3 +1,22 @@
 2013-04-27
+---------1---------2---------3---------4---------5---------6---------7---------8
 Project start
+
+Mon Apr 29 02:39:17 CEST 2013
+---------1---------2---------3---------4---------5---------6---------7---------8
+Basic function complete. From file to stdout tested only. Named pipe should
+work howver. This is complete line in to complete line out, i.e. not a real
+case where buffers and sizes play role. For kernel-logs this is probably so,
+but we really don't want to take chanses as this is an important validator
+for SAMPLER inotify feature.
+
+An Android UART log can be re-played like this:
+
+./hemul -i UART.txt \
+   -R'(^\[[[:space:]])(.*)(\].*)' -r2
+
+A fixed time-interval replay can me done like this:
+
+./hemul -i UART.txt -p1000000
+
 

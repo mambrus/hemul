@@ -71,6 +71,7 @@ struct arguments
 	int piped_output;
 	char *ofilename;
 	char *ifilename;
+	char *ts_format; /* Time Format parse-able by *strptime*/
 	struct ts_regex ts_regex;
 };
 extern struct arguments arguments;
@@ -87,6 +88,8 @@ struct mod_hemul
 extern struct mod_hemul mod_hemul;
 
 int hemul_init( void );
+int hemul_fini( void );
+int hemul_run( void );
 
 #endif /* hemul_h */
 

@@ -41,16 +41,16 @@
  * time-line. If function is used for a generic diff of two times and the
  * actual time for the t1 come before t0, this function returns a negative
  * time */
-struct timeval tv_diff(struct timeval t0, struct timeval t1) {
+struct timeval tv_diff(struct timeval *t0, struct timeval *t1) {
 	struct timeval tv;
 
 	/* We don't know the scalar base-types. Therefore creating extra
 	 * temp of known type and let the cast occur in two steps */
-	int32_t t0_us = t0.tv_usec;
-	int32_t t1_us = t1.tv_usec;
+	int32_t t0_us = t0->tv_usec;
+	int32_t t1_us = t1->tv_usec;
 	int32_t tr_us;
 
-	tv.tv_sec = t1.tv_sec - t0.tv_sec;
+	tv.tv_sec = t1->tv_sec - t0->tv_sec;
 	tr_us = t1_us - t0_us;
 	if (tr_us<0 ){
 		tv.tv_sec--;
@@ -62,16 +62,16 @@ struct timeval tv_diff(struct timeval t0, struct timeval t1) {
 }
 
 /* Adds time of two 'struct timeval' types */
-struct timeval tv_add(struct timeval t0, struct timeval t1) {
+struct timeval tv_add(struct timeval *t0, struct timeval *t1) {
 	struct timeval tv;
 
 	/* We don't know the scalar base-types. Therefore creating extra
 	 * temp of known type and let the cast occur in two steps */
-	int32_t t0_us = t0.tv_usec;
-	int32_t t1_us = t1.tv_usec;
+	int32_t t0_us = t0->tv_usec;
+	int32_t t1_us = t1->tv_usec;
 	int32_t tr_us;
 
-	tv.tv_sec = t1.tv_sec + t0.tv_sec;
+	tv.tv_sec = t1->tv_sec + t0->tv_sec;
 	tr_us = t1_us + t0_us;
 	if (tr_us>=1000000){
 		tv.tv_sec++;

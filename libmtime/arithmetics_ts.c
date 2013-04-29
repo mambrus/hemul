@@ -40,20 +40,20 @@
  * time-line. If function is used for a generic diff of two times and the
  * actual time for the t1 come before t0, this function returns a negative
  * time */
-struct timespec ts_diff(struct timespec t0, struct timespec t1) {
+struct timespec ts_diff(struct timespec *t0, struct timespec *t1) {
 	struct timespec ts;
 
 	/* We don't know the scalar base-types. Therefore creating extra
 	 * temp of known type and let the cast occur in two steps */
-	int32_t t0_ns = t0.tv_nsec;
-	int32_t t1_ns = t1.tv_nsec;
+	int32_t t0_ns = t0->tv_nsec;
+	int32_t t1_ns = t1->tv_nsec;
 	int32_t tr_ns;
 
-	ts.tv_sec = t1.tv_sec - t0.tv_sec;
+	ts.tv_sec = t1->tv_sec - t0->tv_sec;
 	tr_ns = t1_ns - t0_ns;
 	if (tr_ns<0 ){
 		ts.tv_sec--;
-		ts.tv_nsec = 1000000l + tr_ns;
+		ts.tv_nsec = 1000000000l + tr_ns;
 	} else
 		ts.tv_nsec = tr_ns;
 
@@ -61,20 +61,20 @@ struct timespec ts_diff(struct timespec t0, struct timespec t1) {
 }
 
 /* Adds time of two 'struct timespec' types */
-struct timespec ts_add(struct timespec t0, struct timespec t1) {
+struct timespec ts_add(struct timespec *t0, struct timespec *t1) {
 	struct timespec ts;
 
 	/* We don't know the scalar base-types. Therefore creating extra
 	 * temp of known type and let the cast occur in two steps */
-	int32_t t0_ns = t0.tv_nsec;
-	int32_t t1_ns = t1.tv_nsec;
+	int32_t t0_ns = t0->tv_nsec;
+	int32_t t1_ns = t1->tv_nsec;
 	int32_t tr_ns;
 
-	ts.tv_sec = t1.tv_sec + t0.tv_sec;
+	ts.tv_sec = t1->tv_sec + t0->tv_sec;
 	tr_ns = t1_ns + t0_ns;
-	if (tr_ns>=1000000){
+	if (tr_ns>=1000000000){
 		ts.tv_sec++;
-		ts.tv_nsec = tr_ns - 1000000l;
+		ts.tv_nsec = tr_ns - 1000000000l;
 	} else
 		ts.tv_nsec = tr_ns;
 

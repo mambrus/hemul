@@ -28,10 +28,11 @@
 
 /* Public API */
 int time_now(struct timespec *tp);
-struct timeval tv_add(struct timeval t0, struct timeval t1);
-struct timeval tv_diff(struct timeval t0, struct timeval t1);
-struct timespec ts_add(struct timespec t0, struct timespec t1);
-struct timespec ts_diff(struct timespec t0, struct timespec t1);
+struct timeval tv_add(struct timeval *t0, struct timeval *t1);
+struct timeval tv_diff(struct timeval *t0, struct timeval *t1);
+struct timespec ts_add(struct timespec *t0, struct timespec *t1);
+struct timespec ts_diff(struct timespec *t0, struct timespec *t1);
+int tv_sleep(struct timeval *s);
 
 enum clock_type {
 	AUTODETECT = 0,     /* Probes during startup and selects best type */

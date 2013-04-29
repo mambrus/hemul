@@ -194,6 +194,7 @@ struct arguments arguments = {
 	.piped_output   = 0,
 	.ofilename      = NULL,
 	.ifilename      = NULL,
+	.ts_format      = NULL,
 	.ts_regex       = {
 		.str        = NULL,
 		.idx        = 1,
@@ -203,7 +204,7 @@ struct arguments arguments = {
 int main(int argc, char **argv) {
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "DuhvVPd:p:o:i",
+		int c = getopt_long(argc, argv, "DuhvVPd:p:o:i:R:r:",
 			long_options, &option_index);
 		/* Detect the end of the options. */
 		if (c == -1)
@@ -219,6 +220,8 @@ int main(int argc, char **argv) {
 	}
 
 	assert_ext(hemul_init()==0);
+	assert_ext(hemul_run()==0);
+	assert_ext(hemul_fini()==0);
 	return 0;
 }
 

@@ -47,7 +47,7 @@ int hemul_init() {
 	int read_stdin = 1;
 	struct stat buf;
 	char err_str[80];
-    
+
 	if (arguments.ofilename != NULL) {
 		read_stdin = 0;
 		rc = stat(arguments.ofilename, &buf);
@@ -57,17 +57,21 @@ int hemul_init() {
 		} else
 			assert_ret("stat() failed unexpectedly" == NULL);
 	}
-	
+
 	if (arguments.piped_output) {
 		assert_ret(arguments.ofilename != NULL);
 		/* Check if exists, & is a pipe, create if not */
 		if (create_file) {
+			INFO(("Creating named pipe %s\n",arguments.ofilename));
 			assert_ret(mkfifo(arguments.ofilename,
 				S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH)==0);
 		}
 	}
-	
+
 	if (mod_hemul.ts_regex->str) {
+		INFO(("Compileing regexp %s for index %d\n",
+			mod_hemul.ts_regex->str,
+			mod_hemul.ts_regex->idx));
 		rc=regcomp(
 			&(mod_hemul.ts_regex->rgx),
 			mod_hemul.ts_regex->str,
@@ -83,14 +87,33 @@ int hemul_init() {
 		return(1);
 	}
 
+
+	if (arguments.ofilename){
+		assert_ret((mod_hemul.out=fopen(arguments.ofilename,"a")) != NULL);
+	} else {
+		mod_hemul.out=stdout;
+	}
+	if (arguments.ifilename){
+		assert_ret((mod_hemul.in=fopen(arguments.ifilename,"r")) != NULL);
+	} else {
+		mod_hemul.in=stdin;
+	}
+
 	return 0;
 }
 
 int hemul_fini() {
 
+	if (arguments.ofilename){
+		assert_ret(fclose(mod_hemul.out));
+	}
+	if (arguments.ifilename){
+		assert_ret(fclose(mod_hemul.in));
+	}
+
 	if (mod_hemul.pipe_created)
 		assert_ret(remove(arguments.ofilename));
-	
+
 	return 0;
 }
 

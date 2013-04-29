@@ -73,3 +73,9 @@ int time_now(struct timespec *tp) {
 	}
 	return rc;
 }
+
+int tv_sleep(struct timeval *s) {
+	sleep(s->tv_sec);
+	usleep(s->tv_usec);
+	return 0;
+}

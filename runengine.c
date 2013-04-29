@@ -37,6 +37,10 @@
 /* More than 3 should really not be needed, adding a few just in case */
 #define MAX_SUBEXP 5
 
+#ifndef LINE_MAX
+#define LINE_MAX 1024
+#endif
+
 
 /* This thread takes what it's got in buffer when buf-len is reached. */
 void *output_pumper(void* inarg) {
@@ -49,7 +53,59 @@ void *output_pumper(void* inarg) {
 	while (1) {
 
 		rc = mq_receive(q, msg_buf, 1024/*MYMSGSIZE*/, NULL);
-		fputs(stdout,"hello\n");
+		//fputs(stdout,"hello\n");
 
+	}
+}
+
+int hemul_run() {
+	char line[LINE_MAX];
+
+	if (arguments.ptime >= 0) {
+		while (fgets(line, LINE_MAX, mod_hemul.in) != NULL) {
+			fputs(line, mod_hemul.out);
+			usleep(arguments.ptime);
+		}
+	} else {
+		int rc;
+		regmatch_t mtch_idxs[MAX_SUBEXP+1];
+		char err_str[80];
+		char time_str[80];
+		struct timeval last_time, curr_time, diff_time;
+		int first_round = 1;
+
+		while (fgets(line, LINE_MAX, mod_hemul.in) != NULL) {
+			/* Find out how long time to usleep */
+			rc=regexec(&mod_hemul.ts_regex->rgx, line, MAX_SUBEXP+1,
+				mtch_idxs, 0); if (rc) {
+				regerror(rc, &mod_hemul.ts_regex->rgx, err_str, 80);
+				fprintf(stderr, "Regexec faliure: %s\n", err_str);
+				return(rc);
+			} else {
+				/*Note: The correct idx to match against is in arguments*/
+				int idx = mod_hemul.ts_regex->idx;
+				strncpy(
+					time_str,
+					&line[mtch_idxs[idx].rm_so],
+					mtch_idxs[idx].rm_eo - mtch_idxs[idx].rm_so);
+				if (!arguments.ts_format) {
+					/* No format given, assume numerical (e.g. kernel-time
+					 * or numerical epoc time). */
+					sscanf(time_str,"%d.%d",
+						(int*)&curr_time.tv_sec,
+						(int*)&curr_time.tv_usec); }
+					if (first_round) {
+						first_round = 0;
+						memcpy(&last_time, &curr_time,
+							sizeof(struct timeval));
+					}
+					diff_time = tv_diff(&last_time,&curr_time);
+					memcpy(&last_time, &curr_time,
+						sizeof(struct timeval));
+					tv_sleep(&diff_time);
+			}
+			/* Output the line */
+			fputs(line, mod_hemul.out);
+		}
 	}
 }
