@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <string.h>
 
 #ifndef NDEBUG
 #  define assert_ign assert

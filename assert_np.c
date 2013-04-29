@@ -32,8 +32,9 @@
 
 void _assertfail(char *assertstr, char *filestr, int line) {
 
-		fprintf(ASSERT_ERROR_FILE,"assert_ext: \"%s\" %s:%d\n",
-			assertstr, filestr, line);
+		fprintf(ASSERT_ERROR_FILE,"assert_ext: \"%s\" (%s:%d). "
+			"errno: %d (%s)\n",
+			assertstr, filestr, line, errno, strerror(errno));
 		fflush(ASSERT_ERROR_FILE);
 		_exit(-1);
 }
