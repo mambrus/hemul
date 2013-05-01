@@ -60,6 +60,7 @@ struct mod_hemul
 	int fdout;
 	int buff_mode;
 	char *obuff;
+	int curr_sz;
 };
 extern struct mod_hemul mod_hemul;
 

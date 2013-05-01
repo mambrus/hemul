@@ -31,6 +31,7 @@
 #include <hemul.h>
 #include <regex.h>
 #include <mqueue.h>
+#include <sys/param.h>
 
 #include "assert_np.h"
 #include "local.h"
@@ -85,11 +86,51 @@ void *time_eventgen_thread(void* inarg) {
 	}
 }
 
+static void dump_and_flush() {
+	if (mod_hemul.curr_sz>0) {
+		write(mod_hemul.fdout, mod_hemul.obuff, mod_hemul.curr_sz);
+		mod_hemul.curr_sz=0;
+		if (arguments.debuglevel>=0)
+			memset(mod_hemul.obuff, 0, arguments.buffer_size+3);
+	}
+}
+
+/* Recurse until ibuf is completely either output or transfered to obuf*/
+static int swallow(char *ibuf, int len) {
+	int obuf_left = arguments.buffer_size - mod_hemul.curr_sz;
+	int ibuf_left = len;
+	int olen = 0;
+	int trans_sz=MIN(obuf_left, len);
+
+	if (len==0)
+		return 0;
+
+	if (len+mod_hemul.curr_sz < arguments.buffer_size) {
+		memcpy(&mod_hemul.obuff[mod_hemul.curr_sz], ibuf, len);
+		mod_hemul.curr_sz += len;
+	} else {
+		/* Will fill buffer. 
+		 * 1) Stuff as much as possible.
+		 * 2) output
+		 * 3) Stuff the rest (recurse)*/
+		
+		assert_ext((mod_hemul.curr_sz+trans_sz)<= arguments.buffer_size);
+		memcpy(&mod_hemul.obuff[mod_hemul.curr_sz], ibuf, trans_sz);
+		mod_hemul.curr_sz += trans_sz;
+		dump_and_flush();
+		ibuf_left = len - trans_sz;
+		if (ibuf_left>0)
+			olen=swallow(&ibuf[trans_sz],ibuf_left);
+		assert_ext(olen==ibuf_left);
+	}
+	return len;
+}
+
 /* This thread output and flushes what it's got in buffer when buff-length is
  * reached. */
 void *buff_dumper(void* inarg) {
 	mqd_t q;
-	int s,rc;
+	int rc,len;
 	struct qmsg m;
 
 	INFO(("Thread [%s] starts... \n", __FUNCTION__));
@@ -101,14 +142,14 @@ void *buff_dumper(void* inarg) {
 			if (arguments.debuglevel>=3) {
 				INFO(("R: %s\n", m.d.line.s));
 			}
-			fputs(m.d.line.s, mod_hemul.fout);
-			//TBD Should be this line really TBD
-			//fputs(mod_hemul.obuff, mod_hemul.fout);
+			len=swallow(m.d.line.s, m.d.line.len);
+			assert_ext(len==m.d.line.len);
 			free(m.d.line.s);
 		} else if (	m.t == time_event ) {
 			if (arguments.debuglevel>=3) {
 				INFO(("Flushing buffer\n"));
 			}
+			dump_and_flush();
 		}
 	}
 }
@@ -136,7 +177,7 @@ int hemul_run() {
 	mqd_t q;
 
 
-	if (arguments.buffer_timeout > 0) {
+	if (arguments.buffer_size > 0) {
 		struct mq_attr qattr;
 
 		INFO(("Unlinking old queue name (if used). \n"));
@@ -148,17 +189,18 @@ int hemul_run() {
 			!= (mqd_t)-1);
 
 		assert_ret(pthread_create(
-				&mod_hemul.th_timer,
-				NULL,
-				time_eventgen_thread,
-				&arguments.buffer_timeout
-			) == 0 );
-		assert_ret(pthread_create(
 				&mod_hemul.th_out,
 				NULL,
 				buff_dumper,
 				NULL
 			) == 0 );
+		if (arguments.buffer_timeout > 0) 
+			assert_ret(pthread_create(
+					&mod_hemul.th_timer,
+					NULL,
+					time_eventgen_thread,
+					&arguments.buffer_timeout
+				) == 0 );
 	}
 
 	if (arguments.ptime >= 0) {

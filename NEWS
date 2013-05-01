@@ -1,6 +1,32 @@
+Thu May  2 00:46:50 CEST 2013
+---------1---------2---------3---------4---------5---------6---------7---------8
+Buffer-emulation in place. Interesting test-cases
+
+Small buffer, long timeout:
+---------------------------
+(infinite time-out)
+
+./hemul -i ../sampler/data/events.txt -R'(..-.. ..:..:..\....)(.*)' \
+  -r1 -F'%m-%d %H:%M:%S' -B10
+
+Big buffer, short timeout:
+--------------------------
+(Pipe debug-info to file. To be picked it up with tail -f)
+
+./hemul -i ../sampler/data/events.txt -R'(..-.. ..:..:..\....)(.*)' -r1 \
+   -F'%m-%d %H:%M:%S' -B1024 -b10000000 -d3 -v 2>/tmp/dbg.txt
+
+Emulate output from a character-device:
+---------------------------------------
+(The full Monty)
+
+./hemul -i ../sampler/data/events.txt -R'(..-.. ..:..:..\....)(.*)' -r1 \
+   -F'%m-%d %H:%M:%S' -B1024 -b1000000 -o /tmp/kalle.txt -P 
+   -v -d3 2>/tmp/dmp.txt
+
 Wed May  1 20:53:53 CEST 2013
 ---------1---------2---------3---------4---------5---------6---------7---------8
-Threaded framewrok in place. Test-run like this:
+Threaded framework in place. Test-run like this:
 
 ./hemul -i ../sampler/data/events.txt -R'(..-.. ..:..:..\....)(.*)' -r1 \
    -F'%m-%d %H:%M:%S' -B1024 -b10000000
@@ -27,9 +53,9 @@ Project start
 Mon Apr 29 02:39:17 CEST 2013
 ---------1---------2---------3---------4---------5---------6---------7---------8
 Basic function complete. From file to stdout tested only. Named pipe should
-work howver. This is complete line in to complete line out, i.e. not a real
+work however. This is complete line in to complete line out, i.e. not a real
 case where buffers and sizes play role. For kernel-logs this is probably so,
-but we really don't want to take chanses as this is an important validator
+but we really don't want to take chances as this is an important validator
 for SAMPLER inotify feature.
 
 An Android UART log can be re-played like this:

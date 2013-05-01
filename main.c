@@ -41,7 +41,8 @@
 #define DEF_SUBEXPR 1
 #endif
 #ifndef DEF_BUFFER_TIMEOUT
-#define DEF_BUFFER_TIMEOUT 1000000ul
+//#define DEF_BUFFER_TIMEOUT 1000000ul
+#define DEF_BUFFER_TIMEOUT -1l
 #else
 #define BUFFER_TIMEOUT_CC_DEFINED
 #endif
@@ -50,7 +51,7 @@
 #define str(S) #S
 
 const char *program_version =
-"hemul 0.01";
+"hemul 0.10";
 
 #define HELP_USAGE     1
 #define HELP_LONG      2

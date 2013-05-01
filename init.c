@@ -40,6 +40,8 @@
 struct mod_hemul mod_hemul = {
 	.pipe_created = 0,
 	.buff_mode = 0,
+	.curr_sz = 0,
+	.obuff = NULL,
 	.ts_regex = &arguments.ts_regex,
 };
 
