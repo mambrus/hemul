@@ -18,40 +18,13 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-/* Local interface & stuff for HEMUL  */
+/* Public interface for HEMUL */
 
 #ifndef hemul_h
 #define hemul_h
 #include <pthread.h>
 #include <regex.h>
 #include <stdint.h>
-
-#ifndef DBGLVL
-#define DBGLVL 3
-#endif
-
-#define Q_OUTPUT_NAME "/tmp/q/out"
-
-#define INFO_TO( F, FNKN, S ) \
-	{ \
-		if (arguments.verbose) { \
-			FNKN S; \
-			fflush( F ); \
-		} \
-	}
-
-#if ( DBGLVL == 0 )
-#  define INFO( S ) ((void)0)
-#elif ( DBGLVL == 1 )
-#  define INFO( S ) INFO_TO( stdout, printf, S )
-#elif ( DBGLVL == 2 )
-#  define INFO( S ) INFO_TO( stdout, printf, S )
-#elif ( DBGLVL == 3 )
-#  define eprintf(...) fprintf (stderr, __VA_ARGS__)
-#  define INFO( S ) INFO_TO( stderr, eprintf, S )
-#else
-#  error bad value of DBGLVL
-#endif
 
 struct ts_regex {
 	char *str;			/* The string originally describing the regex. Note:
@@ -66,26 +39,17 @@ struct ts_regex {
 struct arguments
 {
 	int verbose;
-	int ptime;        
+	int ptime;
 	int debuglevel;
 	int piped_output;
 	char *ofilename;
 	char *ifilename;
-	char *ts_format; /* Time Format parse-able by *strptime*/
 	struct ts_regex ts_regex;
+	int buffer_size;
+	int buffer_timeout;
+	char *ts_format; /* Time Format parse-able by *strptime*/
 };
 extern struct arguments arguments;
-
-/* Globals */
-struct mod_hemul
-{
-	pthread_t tout;
-	int pipe_created;
-	struct ts_regex *ts_regex;
-	FILE *in;
-	FILE *out;
-};
-extern struct mod_hemul mod_hemul;
 
 int hemul_init( void );
 int hemul_fini( void );

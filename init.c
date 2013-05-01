@@ -28,33 +28,40 @@
 #include <sys/wait.h>
 #include <getopt.h>
 #include <mtime.h>
-
-#include "assert_np.h"
-#include "hemul.h"
 #include <regex.h>
+
+#include <hemul.h>
+#include "assert_np.h"
+#include "local.h"
 
 /* More than 3 should really not be needed, adding a few just in case */
 #define MAX_SUBEXP 5
 
 struct mod_hemul mod_hemul = {
 	.pipe_created = 0,
+	.buff_mode = 0,
 	.ts_regex = &arguments.ts_regex,
 };
 
 int hemul_init() {
 	int rc;
 	int lerrno, create_file=0;
-	int read_stdin = 1;
-	struct stat buf;
+	struct stat isbuf,osbuf;
 	char err_str[80];
 
 	if (arguments.ofilename != NULL) {
-		read_stdin = 0;
-		rc = stat(arguments.ofilename, &buf);
+		rc = stat(arguments.ofilename, &osbuf);
 		lerrno = errno;
-		if ( rc==-1 && lerrno==ENOENT ) {
-			create_file = 1;
-		} else
+		if ( rc==-1 )
+			if (lerrno==ENOENT )
+				create_file = 1;
+			else
+				assert_ret("stat() failed unexpectedly" == NULL);
+	}
+	if (arguments.ifilename != NULL) {
+		rc = stat(arguments.ifilename, &isbuf);
+		lerrno = errno;
+		if ( rc==-1 )
 			assert_ret("stat() failed unexpectedly" == NULL);
 	}
 
@@ -65,6 +72,7 @@ int hemul_init() {
 			INFO(("Creating named pipe %s\n",arguments.ofilename));
 			assert_ret(mkfifo(arguments.ofilename,
 				S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH)==0);
+			mod_hemul.pipe_created = 1;
 		}
 	}
 
@@ -87,28 +95,49 @@ int hemul_init() {
 		return(1);
 	}
 
-
 	if (arguments.ofilename){
-		assert_ret((mod_hemul.out=fopen(arguments.ofilename,"a")) != NULL);
+		assert_ret((mod_hemul.fdout=open(arguments.ofilename,
+			O_WRONLY | O_APPEND | O_CREAT)) != -1);
+		assert_ret((mod_hemul.fout=fdopen(mod_hemul.fdout,"a")) != NULL);
 	} else {
-		mod_hemul.out=stdout;
+		mod_hemul.fout=stdout;
+		mod_hemul.fdout=1;
 	}
 	if (arguments.ifilename){
-		assert_ret((mod_hemul.in=fopen(arguments.ifilename,"r")) != NULL);
+		assert_ret((mod_hemul.fdin=open(arguments.ifilename,
+			O_RDONLY)) != -1);
+		assert_ret((mod_hemul.fin=fdopen(mod_hemul.fdin,"r")) != NULL);
 	} else {
-		mod_hemul.in=stdin;
+		mod_hemul.fin=stdin;
+		mod_hemul.fdin=0;
+	}
+
+	if (arguments.buffer_size > 0) {
+		mod_hemul.buff_mode = 1;
+		assert_ret((mod_hemul.obuff = malloc(arguments.buffer_size+3)) != NULL);
 	}
 
 	return 0;
 }
 
 int hemul_fini() {
+	int cancel_val[4];
 
+	if (mod_hemul.buff_mode){
+		if (arguments.buffer_timeout>0) {
+			pthread_join(mod_hemul.th_out,NULL/*&cancel_val*/);
+			pthread_cancel(mod_hemul.th_timer);
+		} else {
+			/* Will never timeout. Kill thread, it's cancellations function
+			 * will flush buffer */
+			pthread_cancel(mod_hemul.th_out);
+		}
+	}
 	if (arguments.ofilename){
-		assert_ret(fclose(mod_hemul.out));
+		assert_ret(fclose(mod_hemul.fout));
 	}
 	if (arguments.ifilename){
-		assert_ret(fclose(mod_hemul.in));
+		assert_ret(fclose(mod_hemul.fin));
 	}
 
 	if (mod_hemul.pipe_created)

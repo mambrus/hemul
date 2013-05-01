@@ -28,13 +28,22 @@
 #include <sys/wait.h>
 #include <getopt.h>
 #include <mtime.h>
+#include <hemul.h>
 
 #include "assert_np.h"
-#include "hemul.h"
-
+/*Get rid of this if HEMUL is made to module or lib*/
+#include "local.h"
 
 #ifndef DEF_PERIOD
 #define DEF_PERIOD -1
+#endif
+#ifndef DEF_SUBEXPR
+#define DEF_SUBEXPR 1
+#endif
+#ifndef DEF_BUFFER_TIMEOUT
+#define DEF_BUFFER_TIMEOUT 1000000ul
+#else
+#define BUFFER_TIMEOUT_CC_DEFINED
 #endif
 
 #define xstr(S) str(S)
@@ -67,8 +76,9 @@ void help(FILE* file, int flags) {
 			"\n"
 			"  -d, --debuglevel=level     Debug-level\n"
 			"  -D, --documentation        Output full documentation, then exit\n"
-			"  -p, --period=ptime         Period-time in uS. -1 equals event-driven output.\n"
-			"                             Default period-time is [100000] uS\n"
+			"  -p, --period=ptime         Period-time in uS. A negative value means purely\n"
+			"                             event-driven output.\n"
+			"                             Default period-time is ["xstr(DEF_PERIOD)"] uS\n"
 			"  -P, --pipe                 Output is a named pipe.\n"
 			"                             Created if missing, requires -o\n"
 			"  -o, --outfile=file-name    Output is sent to this file-name.\n"
@@ -76,6 +86,10 @@ void help(FILE* file, int flags) {
 			"  -v, --verbose              Produce verbose output. This flag lets you see how\n"
 			"  -R, --regex=string         Regex string to identify time-stamp\n"
 			"  -r, --regi=idx             Sub expression to use as time-stamp\n"
+			"                             Defaults to ["xstr(DEF_SUBEXPR)"]\n"
+			"  -B, --buffered=size        Emulate buffered output of size <size>\n"
+			"  -b, --buffered=timeout     Emulated buffered output with timeout of <timeout>\n"
+			"                             Defaults to ["xstr(DEF_BUFFER_TIMEOUT)"] uS\n"
 			"  -F, --format=string        Format string describing the time-stamp. Follows \n"
 			"                             same convention as format for the 'date' command\n"
 			"  -h, --help                 Give this help list\n"
@@ -160,6 +174,12 @@ static void parse_opt(
 		case 'r':
 			arguments->ts_regex.idx = arg ? atoi (arg) : -1;
 			break;
+		case 'B':
+			arguments->buffer_size = arg ? atoi (arg) : -1;
+			break;
+		case 'b':
+			arguments->buffer_timeout = arg ? atoi (arg) : -1;
+			break;
 		case 'F':
 			arguments->ts_format = arg;
 			break;
@@ -178,7 +198,7 @@ static void parse_opt(
 
 static struct option long_options[] = {
 	{"verbose",       no_argument,       0, 'v'},
-	{"cersion",       no_argument,       0, 'V'},
+	{"version",       no_argument,       0, 'V'},
 	{"debuglevel",    required_argument, 0, 'd'},
 	{"period",        required_argument, 0, 'p'},
 	{"pipe",          no_argument,       0, 'P'},
@@ -186,6 +206,8 @@ static struct option long_options[] = {
 	{"infile",        required_argument, 0, 'i'},
 	{"regex",         required_argument, 0, 'R'},
 	{"regi",          required_argument, 0, 'r'},
+	{"buffsize",      required_argument, 0, 'B'},
+	{"bufftime",      required_argument, 0, 'b'},
 	{"format",        required_argument, 0, 'F'},
 	{"documentation", no_argument,       0, 'D'},
 	{"usage",         no_argument,       0, 'u'},
@@ -195,22 +217,33 @@ static struct option long_options[] = {
 };
 
 struct arguments arguments = {
-	.ptime          = DEF_PERIOD,
-	.debuglevel     = 0,
-	.piped_output   = 0,
-	.ofilename      = NULL,
-	.ifilename      = NULL,
-	.ts_format      = NULL,
-	.ts_regex       = {
-		.str        = NULL,
-		.idx        = 1,
+	.ptime            = DEF_PERIOD,
+	.debuglevel       = 0,
+	.piped_output     = 0,
+	.ofilename        = NULL,
+	.ifilename        = NULL,
+	.buffer_size      = -1,
+	.buffer_timeout   = DEF_BUFFER_TIMEOUT,
+	.ts_regex         = {
+		.str          = NULL,
+		.idx          = DEF_SUBEXPR,
 	},
+	.ts_format        = NULL,
 };
+
+int opt_errno = 0;
+#define OPT_CHECK( E )                                                   \
+	if ( (E) ) {                                                         \
+		opt_errno = EINVAL;                                              \
+		fprintf(stderr,"hemul: options combination impossible or "       \
+			"does not make sense:\n");                                   \
+		fprintf(stderr," failed check--> "str(E)"\n");                   \
+	}
 
 int main(int argc, char **argv) {
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "DuhvVPd:p:o:i:R:r:F:",
+		int c = getopt_long(argc, argv, "DuhvVPd:p:o:i:R:r:B:b:F:",
 			long_options, &option_index);
 		/* Detect the end of the options. */
 		if (c == -1)
@@ -218,9 +251,48 @@ int main(int argc, char **argv) {
 		parse_opt(c, optarg, &arguments);
 	}
 
+	INFO(("\nhemul arguments\n"));
+	INFO(("===============\n"));
+	INFO(("Period time:                       %d uS\n",
+		arguments.ptime));
+	INFO(("Debug level:                       %d\n",
+		arguments.debuglevel));
+	INFO(("Piped output:                      %d\n",
+		arguments.piped_output));
+	INFO(("Outfile-name:                      %s\n",
+		arguments.ofilename));
+	INFO(("Infile-name:                       %s\n",
+		arguments.ifilename));
+	INFO(("Emulated buffered size:            %d\n",
+		arguments.buffer_size));
+	INFO(("Emulated buffered output time-out: %d uS\n",
+		arguments.buffer_timeout));
+	INFO(("In-line time-stamp regexp:         %s\n",
+		arguments.ts_regex.str));
+	INFO(("In-line time-stamp regexp index:   %d\n",
+		arguments.ts_regex.idx));
+	INFO(("In-line time-stamp format:         %s\n",
+		arguments.ts_format));
+	INFO(("\n"));
+
+	OPT_CHECK(arguments.ts_format && !arguments.ts_regex.str);
+#if defined(BUFFER_TIMEOUT_CC_DEFINED)
+	OPT_CHECK(arguments.buffer_timeout>0 && arguments.buffer_size<0);
+#endif
+	OPT_CHECK(arguments.piped_output && !arguments.ofilename);
+	OPT_CHECK(arguments.ts_regex.str && (arguments.ptime>0));
+	OPT_CHECK((arguments.buffer_timeout>0) && (arguments.buffer_size<=0));
+
+	if (opt_errno){
+		errno = opt_errno;
+		perror("hemul: option check");
+		fflush(stderr);
+		help(stderr, HELP_TRY | HELP_EXIT_ERR);
+	}
 	/* Handle any remaining command line arguments (not options). */
 	if (optind < argc) {
-		perror("hemul: to many parameters\n");
+		errno = EINVAL;
+		perror("hemul: to many parameters");
 		fflush(stderr);
 		help(stderr, HELP_TRY | HELP_EXIT_ERR);
 	}
