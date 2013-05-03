@@ -37,6 +37,9 @@
 /* More than 3 should really not be needed, adding a few just in case */
 #define MAX_SUBEXP 5
 
+/* OPEN_MODE_REGULAR_FILE is 0666, open() will apply umask on top of it */
+#define OPEN_MODE_REGULAR_FILE (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
+
 struct mod_hemul mod_hemul = {
 	.pipe_created = 0,
 	.buff_mode = 0,
@@ -99,7 +102,7 @@ int hemul_init() {
 
 	if (arguments.ofilename){
 		assert_ret((mod_hemul.fdout=open(arguments.ofilename,
-			O_WRONLY | O_APPEND | O_CREAT)) != -1);
+			O_WRONLY | O_APPEND | O_CREAT, OPEN_MODE_REGULAR_FILE)) != -1);
 		assert_ret((mod_hemul.fout=fdopen(mod_hemul.fdout,"a")) != NULL);
 	} else {
 		mod_hemul.fout=stdout;
