@@ -100,7 +100,7 @@ $(LOCAL_MODULE): Makefile $(LOCAL_SRC_FILES:c=o)
 	gcc -MM $(CFLAGS) ${@:tmp=c} > ${@}
 
 %.d: %.tmp
-	cat ${@:d=tmp} | sed  -E 's/$*.c/$*.c $@/' > ${@}
+	cat ${@:d=tmp} | sed  -E 's,$*.c,$*.c $@,' > ${@}
 
 %.o: %.d Makefile
 	gcc -c $(CFLAGS) ${@:o=c} -o $@
