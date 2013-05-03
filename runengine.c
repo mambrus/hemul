@@ -154,7 +154,7 @@ void *buff_dumper(void* inarg) {
 	}
 }
 
-static int outputs(const char *s, mqd_t q) {
+static void outputs(const char *s, mqd_t q) {
 	struct qmsg m = {
 		.t = char_chunk,
 	};
@@ -185,7 +185,7 @@ int hemul_run() {
 
 		qattr.mq_maxmsg = 3;
 		qattr.mq_msgsize = sizeof(struct qmsg);
-		assert_ext((q = mq_open( QNAME, O_CREAT|O_WRONLY, 0666, &qattr))
+		assert_ext((q = mq_open( QNAME, O_CREAT|O_WRONLY, OPEN_MODE_REGULAR_FILE, &qattr))
 			!= (mqd_t)-1);
 
 		assert_ret(pthread_create(
@@ -247,7 +247,7 @@ int hemul_run() {
 					strptime("0","%s",&tm);
 					assert_ext( (lstr=strptime( time_str,
 						arguments.ts_format, &tm )) != NULL );
-					if (lstr[0]='.') {
+					if (lstr[0]=='.') {
 						/*
 						* Permit reading fraction of a second. Assume this to
 						* be microsecond (6 decimal). Adjust if not. Note, this
@@ -285,4 +285,5 @@ int hemul_run() {
 			outputs(line, q);
 		}
 	}
+	return 0;
 }

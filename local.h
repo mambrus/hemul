@@ -23,6 +23,7 @@
 #ifndef local_h
 #define local_h
 #include <pthread.h>
+#include <fcntl.h>
 
 #define QNAME "/das_Q"
 
@@ -46,6 +47,9 @@
 #else
 #  error bad value of DBGLVL
 #endif
+
+/* OPEN_MODE_REGULAR_FILE is 0666, open() will apply umask on top of it */
+#define OPEN_MODE_REGULAR_FILE (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
 /* Globals */
 struct mod_hemul

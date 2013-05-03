@@ -37,9 +37,6 @@
 /* More than 3 should really not be needed, adding a few just in case */
 #define MAX_SUBEXP 5
 
-/* OPEN_MODE_REGULAR_FILE is 0666, open() will apply umask on top of it */
-#define OPEN_MODE_REGULAR_FILE (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
-
 struct mod_hemul mod_hemul = {
 	.pipe_created = 0,
 	.buff_mode = 0,
@@ -57,11 +54,12 @@ int hemul_init() {
 	if (arguments.ofilename != NULL) {
 		rc = stat(arguments.ofilename, &osbuf);
 		lerrno = errno;
-		if ( rc==-1 )
+		if ( rc==-1 ) {
 			if (lerrno==ENOENT )
 				create_file = 1;
 			else
 				assert_ret("stat() failed unexpectedly" == NULL);
+		}
 	}
 	if (arguments.ifilename != NULL) {
 		rc = stat(arguments.ifilename, &isbuf);
