@@ -109,11 +109,11 @@ static int swallow(char *ibuf, int len) {
 		memcpy(&mod_hemul.obuff[mod_hemul.curr_sz], ibuf, len);
 		mod_hemul.curr_sz += len;
 	} else {
-		/* Will fill buffer. 
+		/* Will fill buffer.
 		 * 1) Stuff as much as possible.
 		 * 2) output
 		 * 3) Stuff the rest (recurse)*/
-		
+
 		assert_ext((mod_hemul.curr_sz+trans_sz)<= arguments.buffer_size);
 		memcpy(&mod_hemul.obuff[mod_hemul.curr_sz], ibuf, trans_sz);
 		mod_hemul.curr_sz += trans_sz;
@@ -154,12 +154,19 @@ void *buff_dumper(void* inarg) {
 	}
 }
 
-static void outputs(const char *s, mqd_t q) {
+static void outputs(int lineN, const char *sin, mqd_t q) {
 	struct qmsg m = {
 		.t = char_chunk,
 	};
-
 	int rc;
+	char s[LINE_MAX];
+	if (arguments.linenumb){
+		rc=sprintf(s,"%d%s", lineN, arguments.linenumb);
+		strncpy(&s[rc], sin, LINE_MAX-10);
+	} else {
+		strncpy(s, sin, LINE_MAX);
+	}
+
 	if (!mod_hemul.buff_mode) {
 		/*Simple case, just get rid of the data to wherever it's supposed to
 		 * go */
@@ -174,6 +181,7 @@ static void outputs(const char *s, mqd_t q) {
 
 int hemul_run() {
 	char line[LINE_MAX];
+	char oline[LINE_MAX];
 	mqd_t q;
 
 
@@ -194,7 +202,7 @@ int hemul_run() {
 				buff_dumper,
 				NULL
 			) == 0 );
-		if (arguments.buffer_timeout > 0) 
+		if (arguments.buffer_timeout > 0)
 			assert_ret(pthread_create(
 					&mod_hemul.th_timer,
 					NULL,
@@ -214,7 +222,7 @@ int hemul_run() {
 		char err_str[80];
 		char time_str[80];
 		struct timeval last_time, curr_time, diff_time;
-		int i,first_round = 1;
+		int i,first_round = 1,lineN=0;
 		struct tm tm;
 		char *lstr;
 		int usec; /*Extra tempoary usec*/
@@ -282,7 +290,7 @@ int hemul_run() {
 					sizeof(struct timeval));
 			}
 			/* Output the line */
-			outputs(line, q);
+			outputs(++lineN,line, q);
 		}
 	}
 	return 0;

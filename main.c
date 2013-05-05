@@ -82,6 +82,9 @@ void help(FILE* file, int flags) {
 			"                             Default period-time is ["xstr(DEF_PERIOD)"] uS\n"
 			"  -P, --pipe                 Output is a named pipe.\n"
 			"                             Created if missing, requires -o\n"
+			"  -n, --linenum=sepstr       Each output is perpended with line-number.\n"
+			"                             String <sepstr> is the separator to the rest\n"
+			"                             of the line.\n"
 			"  -o, --outfile=file-name    Output is sent to this file-name.\n"
 			"  -i, --infile=file-name     Input is received from this file-name.\n"
 			"  -v, --verbose              Produce verbose output. This flag lets you see how\n"
@@ -160,6 +163,9 @@ static void parse_opt(
 			arguments->debuglevel = arg ? atoi (arg) : 0;
 			mtimemod_settings.debuglevel = arguments->debuglevel;
 			break;
+		case 'n':
+			arguments->linenumb = arg;
+			break;
 		case 'p':
 			arguments->ptime = arg ? atoi (arg) : -1;
 			break;
@@ -200,6 +206,7 @@ static void parse_opt(
 static struct option long_options[] = {
 	{"verbose",       no_argument,       0, 'v'},
 	{"version",       no_argument,       0, 'V'},
+	{"linenum",       required_argument, 0, 'n'},
 	{"debuglevel",    required_argument, 0, 'd'},
 	{"period",        required_argument, 0, 'p'},
 	{"pipe",          no_argument,       0, 'P'},
@@ -220,6 +227,7 @@ static struct option long_options[] = {
 struct arguments arguments = {
 	.ptime            = DEF_PERIOD,
 	.debuglevel       = 0,
+	.linenumb         = NULL,
 	.piped_output     = 0,
 	.ofilename        = NULL,
 	.ifilename        = NULL,
@@ -244,7 +252,7 @@ int opt_errno = 0;
 int main(int argc, char **argv) {
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "DuhvVPd:p:o:i:R:r:B:b:F:",
+		int c = getopt_long(argc, argv, "DuhvVPd:p:o:i:R:r:B:b:F:n:",
 			long_options, &option_index);
 		/* Detect the end of the options. */
 		if (c == -1)

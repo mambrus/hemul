@@ -1,3 +1,12 @@
+Sun May  5 21:13:31 CEST 2013
+---------1---------2---------3---------4---------5---------6---------7---------8
+New feature, run like this:
+
+for ((;1;)); do ./hemul -i ../sampler/data/events.txt \
+	-R'(..-.. ..:..:..\....)(.*)' -r1  -n" # "  -F'%m-%d %H:%M:%S' \
+	-B1024 -b10000000 -o /tmp/logcat_e.txt -v -d3; done
+
+
 Thu May  2 00:46:50 CEST 2013
 ---------1---------2---------3---------4---------5---------6---------7---------8
 Buffer-emulation in place. Interesting test-cases

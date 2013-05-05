@@ -47,6 +47,7 @@ struct arguments
 	struct ts_regex ts_regex;
 	int buffer_size;
 	int buffer_timeout;
+	char *linenumb;
 	char *ts_format; /* Time Format parse-able by *strptime*/
 };
 extern struct arguments arguments;
