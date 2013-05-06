@@ -100,7 +100,7 @@ int hemul_init() {
 
 	if (arguments.ofilename){
 		assert_ret((mod_hemul.fdout=open(arguments.ofilename,
-			O_WRONLY | O_APPEND | O_CREAT, OPEN_MODE_REGULAR_FILE)) != -1);
+			O_WRONLY | O_CREAT, OPEN_MODE_REGULAR_FILE)) != -1);
 		assert_ret((mod_hemul.fout=fdopen(mod_hemul.fdout,"a")) != NULL);
 	} else {
 		mod_hemul.fout=stdout;

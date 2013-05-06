@@ -49,7 +49,8 @@
 #endif
 
 /* OPEN_MODE_REGULAR_FILE is 0666, open() will apply umask on top of it */
-#define OPEN_MODE_REGULAR_FILE (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
+#define OPEN_MODE_REGULAR_FILE \
+	(S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
 /* Globals */
 struct mod_hemul
