@@ -42,6 +42,10 @@ struct mod_hemul mod_hemul = {
 	.buff_mode = 0,
 	.curr_sz = 0,
 	.obuff = NULL,
+	.fdout = -1,
+	.fout = NULL,
+	.fdin = -1,
+	.fin = NULL,
 	.ts_regex = &arguments.ts_regex,
 };
 

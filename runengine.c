@@ -169,8 +169,8 @@ static void outputs(int lineN, const char *sin, mqd_t q) {
 
 	if (!mod_hemul.buff_mode) {
 		/*Simple case, just get rid of the data to wherever it's supposed to
-		 * go */
-		fputs(s, mod_hemul.fout);
+		 * go. Make sure output is not buffered. */
+		write(mod_hemul.fdout, s, strnlen(s,LINE_MAX));
 	} else {
 		m.d.line.len = strlen(s);
 		m.d.line.s = strdup(s);
@@ -183,6 +183,7 @@ int hemul_run() {
 	char line[LINE_MAX];
 	char oline[LINE_MAX];
 	mqd_t q;
+	int lineN=0;
 
 
 	if (arguments.buffer_size > 0) {
@@ -214,6 +215,7 @@ int hemul_run() {
 	if (arguments.ptime >= 0) {
 		while (fgets(line, LINE_MAX, mod_hemul.fin) != NULL) {
 			fputs(line, mod_hemul.fout);
+			outputs(++lineN,line, q);
 			usleep(arguments.ptime);
 		}
 	} else {
@@ -222,10 +224,10 @@ int hemul_run() {
 		char err_str[80];
 		char time_str[80];
 		struct timeval last_time, curr_time, diff_time;
-		int i,first_round = 1,lineN=0;
+		int i,first_round = 1;
 		struct tm tm;
 		char *lstr;
-		int usec; /*Extra tempoary usec*/
+		int usec; /*Extra temporary usec*/
 		time_t sepoch;
 
 		while (fgets(line, LINE_MAX, mod_hemul.fin) != NULL) {
