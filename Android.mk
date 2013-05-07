@@ -7,6 +7,7 @@ LOCAL_PRELINK_MODULE := false
 LOCAL_ARM_MODE := arm
 LOCAL_CFLAGS += -fPIC
 LOCAL_CFLAGS += -DNDEBUG
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/libmtime/include
 
 LOCAL_SRC_FILES:= \
@@ -20,5 +21,4 @@ LOCAL_SHARED_LIBRARIES := libmtime
 
 include $(LOCAL_PATH)/common.mk
 include $(BUILD_EXECUTABLE)
-$(call import-module,)
 $(call import-module,libmtime)
