@@ -1,12 +1,13 @@
 LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := libmtime 
+LOCAL_MODULE := libmtime
 LOCAL_MODULE_TAGS := optional
 LOCAL_PRELINK_MODULE := false
 LOCAL_ARM_MODE := arm
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/..
 
 LOCAL_CFLAGS += -fPIC
 
@@ -22,6 +23,7 @@ LOCAL_SRC_FILES := \
    arithmetics_tv.c \
    initfini.c \
    modglobals.c \
+   ../assert_np.c \
    time.c
 
 LOCAL_SHARED_LIBRARIES :=

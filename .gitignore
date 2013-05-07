@@ -3,6 +3,8 @@ doc.c
 files.s3
 tags
 *.o
+*.tmp
+*.d
 *.a
 *.so
 *.swp

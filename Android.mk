@@ -9,6 +9,7 @@ LOCAL_CFLAGS += -fPIC
 LOCAL_CFLAGS += -DNDEBUG
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/libmtime/include
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/patchlibc/include
 
 LOCAL_SRC_FILES:= \
    main.c \
