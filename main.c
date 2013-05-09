@@ -290,7 +290,6 @@ int main(int argc, char **argv) {
 #endif
 	OPT_CHECK(arguments.piped_output && !arguments.ofilename);
 	OPT_CHECK(arguments.ts_regex.str && (arguments.ptime>0));
-	OPT_CHECK((arguments.buffer_timeout>0) && (arguments.buffer_size<=0));
 
 	if (opt_errno){
 		errno = opt_errno;
