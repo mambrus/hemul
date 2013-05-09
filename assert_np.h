@@ -73,7 +73,7 @@ accepts returning with code, and that the code means error*/
 		int rc = (p);                                            \
                                                                  \
 		if (!rc) {                                               \
-			fprintf(ASSERT_ERROR_FILE,"assert_ret %s (%s:%d). "  \
+			fprintf(ASSERT_ERROR_FILE,"assert_ret: %s (%s:%d). " \
 				"errno: %d (%s)\n",                              \
 			 	#p, __FILE__, __LINE__, errno, strerror(errno)); \
 			fflush(ASSERT_ERROR_FILE);                           \

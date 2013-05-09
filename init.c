@@ -141,14 +141,14 @@ int hemul_fini() {
 		}
 	}
 	if (arguments.ofilename){
-		assert_ret(fclose(mod_hemul.fout));
+		assert_ret(fclose(mod_hemul.fout)==0);
 	}
 	if (arguments.ifilename){
-		assert_ret(fclose(mod_hemul.fin));
+		assert_ret(fclose(mod_hemul.fin)==0);
 	}
 
 	if (mod_hemul.pipe_created)
-		assert_ret(remove(arguments.ofilename));
+		assert_ret(remove(arguments.ofilename)==0);
 
 	return 0;
 }

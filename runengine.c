@@ -214,7 +214,6 @@ int hemul_run() {
 
 	if (arguments.ptime >= 0) {
 		while (fgets(line, LINE_MAX, mod_hemul.fin) != NULL) {
-			fputs(line, mod_hemul.fout);
 			outputs(++lineN,line, q);
 			usleep(arguments.ptime);
 		}
