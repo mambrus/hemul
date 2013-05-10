@@ -30,12 +30,30 @@
 #define ASSERT_ERROR_FILE stderr
 #endif
 
+/* Default exit function. Can be overloaded with you own */
+static void assert_exit(int status) {
+	fprintf(ASSERT_ERROR_FILE,"Default exit reached: [%s]. "
+		"Process terminating!\n",__FUNCTION__);
+	fflush(ASSERT_ERROR_FILE);
+	_exit(status);
+}
+
+static void (*exit_f)(int status) = assert_exit;
+
+void (*get_exit(void))(int status) {
+	return exit_f;
+}
+
+void set_exit(void (*exit_func)(int status)) {
+	exit_f = exit_func;
+}
+
 void _assertfail(char *assertstr, char *filestr, int line) {
 
 		fprintf(ASSERT_ERROR_FILE,"assert_ext: \"%s\" (%s:%d). "
 			"errno: %d (%s)\n",
 			assertstr, filestr, line, errno, strerror(errno));
 		fflush(ASSERT_ERROR_FILE);
-		_exit(-1);
+		exit_f(-1);
 }
 #endif //#ifdef NDEBUG

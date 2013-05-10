@@ -56,6 +56,10 @@
 #endif
 void _assertfail(char *assertstr, char *filestr, int line);
 
+/* Getting and setting new default exit functions */
+void (*get_exit(void))(int status);
+void set_exit(void (*exit_func)(int status));
+
 /* Do the stuff, just ignore acting on the result. */
 #  define assert_np(p) (p)
 #  define assert_ign assert_np
