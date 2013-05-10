@@ -46,7 +46,7 @@ struct mod_hemul mod_hemul = {
 	.fout = NULL,
 	.fdin = -1,
 	.fin = NULL,
-	.ts_regex = &arguments.ts_regex,
+	.ts_regex = &hemul_args.ts_regex,
 };
 
 int hemul_init() {
@@ -55,8 +55,8 @@ int hemul_init() {
 	struct stat isbuf,osbuf;
 	char err_str[80];
 
-	if (arguments.ofilename != NULL) {
-		rc = stat(arguments.ofilename, &osbuf);
+	if (hemul_args.ofilename != NULL) {
+		rc = stat(hemul_args.ofilename, &osbuf);
 		lerrno = errno;
 		if ( rc==-1 ) {
 			if (lerrno==ENOENT )
@@ -65,19 +65,19 @@ int hemul_init() {
 				assert_ret("stat() failed unexpectedly" == NULL);
 		}
 	}
-	if (arguments.ifilename != NULL) {
-		rc = stat(arguments.ifilename, &isbuf);
+	if (hemul_args.ifilename != NULL) {
+		rc = stat(hemul_args.ifilename, &isbuf);
 		lerrno = errno;
 		if ( rc==-1 )
 			assert_ret("stat() failed unexpectedly" == NULL);
 	}
 
-	if (arguments.piped_output) {
-		assert_ret(arguments.ofilename != NULL);
+	if (hemul_args.piped_output) {
+		assert_ret(hemul_args.ofilename != NULL);
 		/* Check if exists, & is a pipe, create if not */
 		if (create_file) {
-			INFO(("Creating named pipe %s\n",arguments.ofilename));
-			assert_ret(mkfifo(arguments.ofilename,
+			INFO(("Creating named pipe %s\n",hemul_args.ofilename));
+			assert_ret(mkfifo(hemul_args.ofilename,
 				S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH)==0);
 			mod_hemul.pipe_created = 1;
 		}
@@ -97,21 +97,21 @@ int hemul_init() {
 			fprintf(stderr, "Regcomp faliure: %s\n", err_str);
 			return(rc);
 		}
-	} else if (arguments.ptime < 0) {
+	} else if (hemul_args.ptime < 0) {
 		fprintf(stderr, "ERROR: Must define either regex or period time.\n");
 		return(1);
 	}
 
-	if (arguments.ofilename){
-		assert_ret((mod_hemul.fdout=open(arguments.ofilename,
+	if (hemul_args.ofilename){
+		assert_ret((mod_hemul.fdout=open(hemul_args.ofilename,
 			O_WRONLY | O_CREAT, OPEN_MODE_REGULAR_FILE)) != -1);
 		assert_ret((mod_hemul.fout=fdopen(mod_hemul.fdout,"a")) != NULL);
 	} else {
 		mod_hemul.fout=stdout;
 		mod_hemul.fdout=1;
 	}
-	if (arguments.ifilename){
-		assert_ret((mod_hemul.fdin=open(arguments.ifilename,
+	if (hemul_args.ifilename){
+		assert_ret((mod_hemul.fdin=open(hemul_args.ifilename,
 			O_RDONLY)) != -1);
 		assert_ret((mod_hemul.fin=fdopen(mod_hemul.fdin,"r")) != NULL);
 	} else {
@@ -119,9 +119,9 @@ int hemul_init() {
 		mod_hemul.fdin=0;
 	}
 
-	if (arguments.buffer_size > 0) {
+	if (hemul_args.buffer_size > 0) {
 		mod_hemul.buff_mode = 1;
-		assert_ret((mod_hemul.obuff = malloc(arguments.buffer_size+3)) != NULL);
+		assert_ret((mod_hemul.obuff = malloc(hemul_args.buffer_size+3)) != NULL);
 	}
 
 	return 0;
@@ -131,7 +131,7 @@ int hemul_fini() {
 	int cancel_val[4];
 
 	if (mod_hemul.buff_mode){
-		if (arguments.buffer_timeout>0) {
+		if (hemul_args.buffer_timeout>0) {
 			pthread_join(mod_hemul.th_out,NULL/*&cancel_val*/);
 			pthread_cancel(mod_hemul.th_timer);
 		} else {
@@ -140,15 +140,15 @@ int hemul_fini() {
 			pthread_cancel(mod_hemul.th_out);
 		}
 	}
-	if (arguments.ofilename){
+	if (hemul_args.ofilename){
 		assert_ret(fclose(mod_hemul.fout)==0);
 	}
-	if (arguments.ifilename){
+	if (hemul_args.ifilename){
 		assert_ret(fclose(mod_hemul.fin)==0);
 	}
 
 	if (mod_hemul.pipe_created)
-		assert_ret(remove(arguments.ofilename)==0);
+		assert_ret(remove(hemul_args.ofilename)==0);
 
 	return 0;
 }

@@ -27,25 +27,37 @@
 
 #define QNAME "/das_Q"
 
-#define INFO_TO( F, FNKN, S ) \
+#define VERBOSE_TO( F, FNKN, S ) \
 	{ \
-		if (arguments.verbose) { \
+		if (hemul_args.verbose) { \
 			FNKN S; \
 			fflush( F ); \
 		} \
 	}
 
-#if ( DBGLVL == 0 )
+#define DBG_TO( F, FNKN, S, L ) \
+	{ \
+		if (L <= hemul_args.debuglevel) { \
+			FNKN S; \
+			fflush( F ); \
+		} \
+	}
+
+#if ( VERBOSE_TYPE == 0 )
 #  define INFO( S ) ((void)0)
-#elif ( DBGLVL == 1 )
-#  define INFO( S ) INFO_TO( stdout, printf, S )
-#elif ( DBGLVL == 2 )
-#  define INFO( S ) INFO_TO( stdout, printf, S )
-#elif ( DBGLVL == 3 )
+#  define DBG_INF( L, S ) DBG_TO( stdout, printf, S, L )
+#elif ( VERBOSE_TYPE == 1 )
+#  define INFO( S ) VERBOSE_TO( stdout, printf, S )
+#  define DBG_INF( L, S ) DBG_TO( stdout, printf, S, L )
+#elif ( VERBOSE_TYPE == 2 )
+#  define INFO( S ) VERBOSE_TO( stdout, printf, S )
+#  define DBG_INF( L, S ) DBG_TO( stdout, printf, S , L )
+#elif ( VERBOSE_TYPE == 3 )
 #  define eprintf(...) fprintf (stderr, __VA_ARGS__)
-#  define INFO( S ) INFO_TO( stderr, eprintf, S )
+#  define INFO( S ) VERBOSE_TO( stderr, eprintf, S )
+#  define DBG_INF( L, S ) DBG_TO( stderr, eprintf, S , L )
 #else
-#  error bad value of DBGLVL
+#  error bad value of VERBOSE_TYPE
 #endif
 
 /* OPEN_MODE_REGULAR_FILE is 0666, open() will apply umask on top of it */

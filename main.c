@@ -133,7 +133,7 @@ extern struct mtimemod_settings mtimemod_settings;
 static void parse_opt(
 	int key,
 	char *arg,
-	struct arguments *arguments
+	struct hemul_args *hemul_args
 ){
 	extern const char hemul_doc[];
 
@@ -149,46 +149,46 @@ static void parse_opt(
 			help(stdout, HELP_LONG | HELP_EXIT);
 			break;
 		case 'v':
-			arguments->verbose = 1;
+			hemul_args->verbose = 1;
 			mtimemod_settings.verbose = 1;
 			break;
 		case 'V':
 			help(stdout, HELP_VERSION | HELP_EXIT);
 			break;
 		case 'P':
-			arguments->piped_output = 1;
+			hemul_args->piped_output = 1;
 			break;
 
 		case 'd':
-			arguments->debuglevel = arg ? atoi (arg) : 0;
-			mtimemod_settings.debuglevel = arguments->debuglevel;
+			hemul_args->debuglevel = arg ? atoi (arg) : 0;
+			mtimemod_settings.debuglevel = hemul_args->debuglevel;
 			break;
 		case 'n':
-			arguments->linenumb = arg;
+			hemul_args->linenumb = arg;
 			break;
 		case 'p':
-			arguments->ptime = arg ? atoi (arg) : -1;
+			hemul_args->ptime = arg ? atoi (arg) : -1;
 			break;
 		case 'o':
-			arguments->ofilename = arg;
+			hemul_args->ofilename = arg;
 			break;
 		case 'i':
-			arguments->ifilename = arg;
+			hemul_args->ifilename = arg;
 			break;
 		case 'R':
-			arguments->ts_regex.str = arg;
+			hemul_args->ts_regex.str = arg;
 			break;
 		case 'r':
-			arguments->ts_regex.idx = arg ? atoi (arg) : -1;
+			hemul_args->ts_regex.idx = arg ? atoi (arg) : -1;
 			break;
 		case 'B':
-			arguments->buffer_size = arg ? atoi (arg) : -1;
+			hemul_args->buffer_size = arg ? atoi (arg) : -1;
 			break;
 		case 'b':
-			arguments->buffer_timeout = arg ? atoi (arg) : -1;
+			hemul_args->buffer_timeout = arg ? atoi (arg) : -1;
 			break;
 		case 'F':
-			arguments->ts_format = arg;
+			hemul_args->ts_format = arg;
 			break;
 
 
@@ -224,7 +224,7 @@ static struct option long_options[] = {
 	{0, 0, 0, 0}
 };
 
-struct arguments arguments = {
+struct hemul_args hemul_args = {
 	.ptime            = DEF_PERIOD,
 	.debuglevel       = 0,
 	.linenumb         = NULL,
@@ -257,39 +257,39 @@ int main(int argc, char **argv) {
 		/* Detect the end of the options. */
 		if (c == -1)
 			break;
-		parse_opt(c, optarg, &arguments);
+		parse_opt(c, optarg, &hemul_args);
 	}
 
-	INFO(("\nhemul arguments\n"));
-	INFO(("===============\n"));
+	INFO(("\nhemul arguments:\n"));
+	INFO((  "================\n"));
 	INFO(("Period time:                       %d uS\n",
-		arguments.ptime));
+		hemul_args.ptime));
 	INFO(("Debug level:                       %d\n",
-		arguments.debuglevel));
+		hemul_args.debuglevel));
 	INFO(("Piped output:                      %d\n",
-		arguments.piped_output));
+		hemul_args.piped_output));
 	INFO(("Outfile-name:                      %s\n",
-		arguments.ofilename));
+		hemul_args.ofilename));
 	INFO(("Infile-name:                       %s\n",
-		arguments.ifilename));
+		hemul_args.ifilename));
 	INFO(("Emulated buffered size:            %d\n",
-		arguments.buffer_size));
+		hemul_args.buffer_size));
 	INFO(("Emulated buffered output time-out: %d uS\n",
-		arguments.buffer_timeout));
-	INFO(("In-line time-stamp regexp:         %s\n",
-		arguments.ts_regex.str));
-	INFO(("In-line time-stamp regexp index:   %d\n",
-		arguments.ts_regex.idx));
+		hemul_args.buffer_timeout));
+	INFO(("In-line time-stamp regex:         %s\n",
+		hemul_args.ts_regex.str));
+	INFO(("In-line time-stamp regex index:   %d\n",
+		hemul_args.ts_regex.idx));
 	INFO(("In-line time-stamp format:         %s\n",
-		arguments.ts_format));
+		hemul_args.ts_format));
 	INFO(("\n"));
 
-	OPT_CHECK(arguments.ts_format && !arguments.ts_regex.str);
+	OPT_CHECK(hemul_args.ts_format && !hemul_args.ts_regex.str);
 #if defined(BUFFER_TIMEOUT_CC_DEFINED)
-	OPT_CHECK(arguments.buffer_timeout>0 && arguments.buffer_size<0);
+	OPT_CHECK(hemul_args.buffer_timeout>0 && hemul_args.buffer_size<0);
 #endif
-	OPT_CHECK(arguments.piped_output && !arguments.ofilename);
-	OPT_CHECK(arguments.ts_regex.str && (arguments.ptime>0));
+	OPT_CHECK(hemul_args.piped_output && !hemul_args.ofilename);
+	OPT_CHECK(hemul_args.ts_regex.str && (hemul_args.ptime>0));
 
 	if (opt_errno){
 		errno = opt_errno;

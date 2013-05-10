@@ -33,8 +33,8 @@
 #define __init __attribute__((constructor))
 #define __fini __attribute__((destructor))
 
-#ifndef DBGLVL
-#define DBGLVL 3
+#ifndef VERBOSE_TYPE
+#define VERBOSE_TYPE 3
 #endif
 
 #ifndef TESTSPEED
@@ -49,21 +49,21 @@
 		} \
 	}
 
-#if ( DBGLVL == 0 )
+#if ( VERBOSE_TYPE == 0 )
 #  define INFO( S ) ((void)0)
 #  define DUSLEEP( T ) ((void)0)
-#elif ( DBGLVL == 1 )
+#elif ( VERBOSE_TYPE == 1 )
 #  define INFO( S ) INFO_TO( stdout, printf, S )
 #  define DUSLEEP( U ) usleep( U )
-#elif ( DBGLVL == 2 )
+#elif ( VERBOSE_TYPE == 2 )
 #  define INFO( S ) INFO_TO( stdout, printf, S )
 #  define DUSLEEP( U ) usleep( U )
-#elif ( DBGLVL == 3 )
+#elif ( VERBOSE_TYPE == 3 )
 #  define eprintf(...) fprintf (stderr, __VA_ARGS__)
 #  define INFO( S ) INFO_TO( stderr, eprintf, S )
 #  define DUSLEEP( U ) usleep( U )
 #else
-#error bad value of DBGLVL
+#error bad value of VERBOSE_TYPE
 #endif
 
 #if ( TESTSPEED == 5 )

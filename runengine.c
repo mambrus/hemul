@@ -79,7 +79,7 @@ void *time_eventgen_thread(void* inarg) {
 	while (1) {
 		//assert_ext(sem_post(&samplermod_data.master_event) == 0);
 		usleep(usec_sleep);
-		if (arguments.debuglevel>=3) {
+		if (hemul_args.debuglevel>=3) {
 			INFO(("Timer delivers event\n"));
 		}
 		rc = mq_send(q, (char*)&m, MSGSIZE, 1);
@@ -90,14 +90,14 @@ static void dump_and_flush() {
 	if (mod_hemul.curr_sz>0) {
 		write(mod_hemul.fdout, mod_hemul.obuff, mod_hemul.curr_sz);
 		mod_hemul.curr_sz=0;
-		if (arguments.debuglevel>=0)
-			memset(mod_hemul.obuff, 0, arguments.buffer_size+3);
+		if (hemul_args.debuglevel>=0)
+			memset(mod_hemul.obuff, 0, hemul_args.buffer_size+3);
 	}
 }
 
 /* Recurse until ibuf is completely either output or transfered to obuf*/
 static int swallow(char *ibuf, int len) {
-	int obuf_left = arguments.buffer_size - mod_hemul.curr_sz;
+	int obuf_left = hemul_args.buffer_size - mod_hemul.curr_sz;
 	int ibuf_left = len;
 	int olen = 0;
 	int trans_sz=MIN(obuf_left, len);
@@ -105,7 +105,7 @@ static int swallow(char *ibuf, int len) {
 	if (len==0)
 		return 0;
 
-	if (len+mod_hemul.curr_sz < arguments.buffer_size) {
+	if (len+mod_hemul.curr_sz < hemul_args.buffer_size) {
 		memcpy(&mod_hemul.obuff[mod_hemul.curr_sz], ibuf, len);
 		mod_hemul.curr_sz += len;
 	} else {
@@ -114,7 +114,7 @@ static int swallow(char *ibuf, int len) {
 		 * 2) output
 		 * 3) Stuff the rest (recurse)*/
 
-		assert_ext((mod_hemul.curr_sz+trans_sz)<= arguments.buffer_size);
+		assert_ext((mod_hemul.curr_sz+trans_sz)<= hemul_args.buffer_size);
 		memcpy(&mod_hemul.obuff[mod_hemul.curr_sz], ibuf, trans_sz);
 		mod_hemul.curr_sz += trans_sz;
 		dump_and_flush();
@@ -139,14 +139,14 @@ void *buff_dumper(void* inarg) {
 
 		rc = mq_receive(q, (char*)&m, MSGSIZE, NULL);
 		if ( m.t == char_chunk ) {
-			if (arguments.debuglevel>=3) {
+			if (hemul_args.debuglevel>=3) {
 				INFO(("R: %s\n", m.d.line.s));
 			}
 			len=swallow(m.d.line.s, m.d.line.len);
 			assert_ext(len==m.d.line.len);
 			free(m.d.line.s);
 		} else if (	m.t == time_event ) {
-			if (arguments.debuglevel>=3) {
+			if (hemul_args.debuglevel>=3) {
 				INFO(("Flushing buffer\n"));
 			}
 			dump_and_flush();
@@ -160,8 +160,8 @@ static void outputs(int lineN, const char *sin, mqd_t q) {
 	};
 	int rc;
 	char s[LINE_MAX];
-	if (arguments.linenumb){
-		rc=sprintf(s,"%d%s", lineN, arguments.linenumb);
+	if (hemul_args.linenumb){
+		rc=sprintf(s,"%d%s", lineN, hemul_args.linenumb);
 		strncpy(&s[rc], sin, LINE_MAX-10);
 	} else {
 		strncpy(s, sin, LINE_MAX);
@@ -186,7 +186,7 @@ int hemul_run() {
 	int lineN=0;
 
 
-	if (arguments.buffer_size > 0) {
+	if (hemul_args.buffer_size > 0) {
 		struct mq_attr qattr;
 
 		INFO(("Unlinking old queue name (if used). \n"));
@@ -203,19 +203,19 @@ int hemul_run() {
 				buff_dumper,
 				NULL
 			) == 0 );
-		if (arguments.buffer_timeout > 0)
+		if (hemul_args.buffer_timeout > 0)
 			assert_ret(pthread_create(
 					&mod_hemul.th_timer,
 					NULL,
 					time_eventgen_thread,
-					&arguments.buffer_timeout
+					&hemul_args.buffer_timeout
 				) == 0 );
 	}
 
-	if (arguments.ptime >= 0) {
+	if (hemul_args.ptime >= 0) {
 		while (fgets(line, LINE_MAX, mod_hemul.fin) != NULL) {
 			outputs(++lineN,line, q);
-			usleep(arguments.ptime);
+			usleep(hemul_args.ptime);
 		}
 	} else {
 		int rc;
@@ -237,13 +237,13 @@ int hemul_run() {
 				fprintf(stderr, "Regexec faliure: %s\n", err_str);
 				return(rc);
 			} else {
-				/*Note: The correct idx to match against is in arguments*/
+				/*Note: The correct idx to match against is in hemul_args*/
 				int idx = mod_hemul.ts_regex->idx;
 				strncpy(
 					time_str,
 					&line[mtch_idxs[idx].rm_so],
 					mtch_idxs[idx].rm_eo - mtch_idxs[idx].rm_so);
-				if (!arguments.ts_format) {
+				if (!hemul_args.ts_format) {
 					/* No format given, assume numerical (e.g. kernel-time
 					 * or numerical epoc time). */
 					sscanf(time_str,"%d.%d",
@@ -255,7 +255,7 @@ int hemul_run() {
 
 					strptime("0","%s",&tm);
 					assert_ext( (lstr=strptime( time_str,
-						arguments.ts_format, &tm )) != NULL );
+						hemul_args.ts_format, &tm )) != NULL );
 					if (lstr[0]=='.') {
 						/*
 						* Permit reading fraction of a second. Assume this to

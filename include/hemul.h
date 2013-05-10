@@ -35,8 +35,8 @@ struct ts_regex {
 	int idx;			/* Which subexpression contain the time-stamp */
 };
 
-/* General arguments */
-struct arguments
+/* General hemul_args */
+struct hemul_args
 {
 	int verbose;
 	int ptime;
@@ -50,7 +50,7 @@ struct arguments
 	char *linenumb;
 	char *ts_format; /* Time Format parse-able by *strptime*/
 };
-extern struct arguments arguments;
+extern struct hemul_args hemul_args;
 
 int hemul_init( void );
 int hemul_fini( void );
