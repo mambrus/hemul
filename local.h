@@ -23,7 +23,10 @@
 #ifndef local_h
 #define local_h
 #include <pthread.h>
+#include <semaphore.h>
 #include <fcntl.h>
+#include <termios.h>
+#include <unistd.h>
 
 #define QNAME "/das_Q"
 
@@ -68,6 +71,8 @@
 struct mod_hemul
 {
 	pthread_t th_out;
+	pthread_t th_userio;
+	sem_t sm_userio;
 	pthread_t th_timer;
 	int pipe_created;
 	struct ts_regex *ts_regex;
@@ -78,8 +83,17 @@ struct mod_hemul
 	int buff_mode;
 	char *obuff;
 	int curr_sz;
+	FILE *fin_user;
+	FILE *fout_user;
+	int fdin_user;
+	int fdout_user;
+	struct termios orig_termio_mode;
+	void (*orig_exit)(int status);
 };
 extern struct mod_hemul mod_hemul;
+
+/* mod-global threads */
+void *userio_thread(void* inarg);
 
 #endif /* local_h */
 

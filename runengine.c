@@ -32,6 +32,7 @@
 #include <regex.h>
 #include <mqueue.h>
 #include <sys/param.h>
+#include <unistd.h>
 
 #include "assert_np.h"
 #include "local.h"
@@ -160,6 +161,10 @@ static void outputs(int lineN, const char *sin, mqd_t q) {
 	};
 	int rc;
 	char s[LINE_MAX];
+
+	/* One of two places that makes sense to possibly pause*/
+	assert_ign(sem_wait(&mod_hemul.sm_userio) == 0);
+
 	if (hemul_args.linenumb){
 		rc=sprintf(s,"%d%s", lineN, hemul_args.linenumb);
 		strncpy(&s[rc], sin, LINE_MAX-10);
@@ -177,6 +182,7 @@ static void outputs(int lineN, const char *sin, mqd_t q) {
 		INFO(("S: %s\n",m.d.line.s));
 		rc = mq_send(q, (char*)&m, MSGSIZE, 1);
 	}
+	assert_ign(sem_post(&mod_hemul.sm_userio) == 0);
 }
 
 int hemul_run() {

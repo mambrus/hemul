@@ -11,6 +11,7 @@ LOCAL_SRC_FILES := \
    init.c \
    assert_np.c \
    runengine.c \
+   userio.c \
    main.c
 
 LOCAL_LIBS := \

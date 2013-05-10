@@ -29,6 +29,8 @@
 #include <getopt.h>
 #include <mtime.h>
 #include <regex.h>
+#include <pthread.h>
+#include <semaphore.h>
 
 #include <hemul.h>
 #include "assert_np.h"
@@ -47,6 +49,10 @@ struct mod_hemul mod_hemul = {
 	.fdin = -1,
 	.fin = NULL,
 	.ts_regex = &hemul_args.ts_regex,
+	.fdin_user = 0,
+	.fdout_user = 1,
+	.fin_user = NULL,
+	.fout_user = NULL,
 };
 
 int hemul_init() {
@@ -54,6 +60,16 @@ int hemul_init() {
 	int lerrno, create_file=0;
 	struct stat isbuf,osbuf;
 	char err_str[80];
+
+	assert_ext(sem_init(&mod_hemul.sm_userio, 0, 1) == 0);
+	assert_ign(!pthread_create(
+		&mod_hemul.th_userio,
+		NULL,
+		userio_thread,
+		NULL
+	));
+	mod_hemul.fin_user=stdin;
+	mod_hemul.fout_user=stdout;
 
 	if (hemul_args.ofilename != NULL) {
 		rc = stat(hemul_args.ofilename, &osbuf);
