@@ -72,7 +72,7 @@ struct mod_hemul
 {
 	pthread_t th_out;
 	pthread_t th_userio;
-	sem_t sm_userio;
+	pthread_mutex_t mx_userio;
 	pthread_t th_timer;
 	int pipe_created;
 	struct ts_regex *ts_regex;

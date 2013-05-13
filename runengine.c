@@ -78,8 +78,10 @@ void *time_eventgen_thread(void* inarg) {
 	assert_ext((q = mq_open( QNAME , O_WRONLY, NULL, 0 )) != (mqd_t)-1);
 
 	while (1) {
-		//assert_ext(sem_post(&samplermod_data.master_event) == 0);
+		//assert_ext(pthread_mutex_unlock(&samplermod_data.master_event) == 0);
 		usleep(usec_sleep);
+		assert_ign((errno=pthread_mutex_lock(&mod_hemul.mx_userio)) == 0);
+		assert_ign((errno=pthread_mutex_unlock(&mod_hemul.mx_userio)) == 0);
 		if (hemul_args.debuglevel>=3) {
 			INFO(("Timer delivers event\n"));
 		}
@@ -163,7 +165,8 @@ static void outputs(int lineN, const char *sin, mqd_t q) {
 	char s[LINE_MAX];
 
 	/* One of two places that makes sense to possibly pause*/
-	assert_ign(sem_wait(&mod_hemul.sm_userio) == 0);
+	assert_ign((errno=pthread_mutex_lock(&mod_hemul.mx_userio)) == 0);
+	assert_ign((errno=pthread_mutex_unlock(&mod_hemul.mx_userio)) == 0);
 
 	if (hemul_args.linenumb){
 		rc=sprintf(s,"%d%s", lineN, hemul_args.linenumb);
@@ -182,7 +185,6 @@ static void outputs(int lineN, const char *sin, mqd_t q) {
 		INFO(("S: %s\n",m.d.line.s));
 		rc = mq_send(q, (char*)&m, MSGSIZE, 1);
 	}
-	assert_ign(sem_post(&mod_hemul.sm_userio) == 0);
 }
 
 int hemul_run() {

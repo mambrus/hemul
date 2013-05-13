@@ -79,7 +79,9 @@ void *userio_thread(void* inarg) {
 		if (ch==' ') {
 			if (running) {
 				/*Pausing data-output*/
-				assert_ign(sem_wait(&mod_hemul.sm_userio) == 0);
+				assert_ign((
+					errno=pthread_mutex_lock(&mod_hemul.mx_userio)
+				) == 0 );
 				/*
 				tcsetattr (mod_hemul.fdin_user, TCSANOW,
 					&mod_hemul.orig_termio_mode);
@@ -88,16 +90,20 @@ void *userio_thread(void* inarg) {
 				cmd_mode = 1;
 				*/
 				running = 0;
-				DBG_INF(4,("Output paused. Entering command mode.\n"));
+				DBG_INF(4,("HEMUL transfer engine paused. "
+					"Entering command mode.\n"));
 			} else {
 				/*Resuming data-output*/
-				assert_ign(sem_post(&mod_hemul.sm_userio) == 0);
+				assert_ign((
+					errno=pthread_mutex_unlock(&mod_hemul.mx_userio)
+				) == 0 );
 				/*
 				tcsetattr (mod_hemul.fdin_user, TCSANOW, &new_termio_mode);
 				cmd_mode = 0;
 				*/
 				running = 1;
-				DBG_INF(4,("Output resumed. Command mode exit.\n"));
+				DBG_INF(4,("HEMUL transfer engine resumed. "
+					"Command mode exit.\n"));
 			}
 		}
 

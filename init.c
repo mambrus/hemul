@@ -61,7 +61,7 @@ int hemul_init() {
 	struct stat isbuf,osbuf;
 	char err_str[80];
 
-	assert_ext(sem_init(&mod_hemul.sm_userio, 0, 1) == 0);
+	assert_ext((errno = pthread_mutex_init(&mod_hemul.mx_userio, 0)) == 0);
 	assert_ign(!pthread_create(
 		&mod_hemul.th_userio,
 		NULL,
