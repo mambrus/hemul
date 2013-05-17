@@ -90,7 +90,7 @@ void *userio_thread(void* inarg) {
 				cmd_mode = 1;
 				*/
 				running = 0;
-				DBG_INF(4,("HEMUL transfer engine paused. "
+				DBG_INF(3,("HEMUL transfer engine paused. "
 					"Entering command mode.\n"));
 			} else {
 				/*Resuming data-output*/
@@ -102,7 +102,7 @@ void *userio_thread(void* inarg) {
 				cmd_mode = 0;
 				*/
 				running = 1;
-				DBG_INF(4,("HEMUL transfer engine resumed. "
+				DBG_INF(3,("HEMUL transfer engine resumed. "
 					"Command mode exit.\n"));
 			}
 		}

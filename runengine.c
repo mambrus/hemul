@@ -72,7 +72,7 @@ void *time_eventgen_thread(void* inarg) {
 	};
 	int rc;
 
-	INFO(("Thread [%s] starts... \n", __FUNCTION__));
+	DBG_INF(3,("Thread [%s] starts... \n", __FUNCTION__));
 
 	assert_ext(usec_sleep>0);
 	assert_ext((q = mq_open( QNAME , O_WRONLY, NULL, 0 )) != (mqd_t)-1);
@@ -83,7 +83,7 @@ void *time_eventgen_thread(void* inarg) {
 		assert_ign((errno=pthread_mutex_lock(&mod_hemul.mx_userio)) == 0);
 		assert_ign((errno=pthread_mutex_unlock(&mod_hemul.mx_userio)) == 0);
 		if (hemul_args.debuglevel>=3) {
-			INFO(("Timer delivers event\n"));
+		DBG_INF(4,("Timer delivers event\n"));
 		}
 		rc = mq_send(q, (char*)&m, MSGSIZE, 1);
 	}
@@ -136,22 +136,18 @@ void *buff_dumper(void* inarg) {
 	int rc,len;
 	struct qmsg m;
 
-	INFO(("Thread [%s] starts... \n", __FUNCTION__));
+	DBG_INF(3,("Thread [%s] starts... \n", __FUNCTION__));
 	assert_ext((q = mq_open( QNAME , O_RDONLY, NULL, 0 )) != (mqd_t)-1);
 	while (1) {
 
 		rc = mq_receive(q, (char*)&m, MSGSIZE, NULL);
 		if ( m.t == char_chunk ) {
-			if (hemul_args.debuglevel>=3) {
-				INFO(("R: %s\n", m.d.line.s));
-			}
+			DBG_INF(4,("R: %s\n", m.d.line.s));
 			len=swallow(m.d.line.s, m.d.line.len);
 			assert_ext(len==m.d.line.len);
 			free(m.d.line.s);
 		} else if (	m.t == time_event ) {
-			if (hemul_args.debuglevel>=3) {
-				INFO(("Flushing buffer\n"));
-			}
+			DBG_INF(3,("Flushing buffer\n"));
 			dump_and_flush();
 		}
 	}
@@ -164,7 +160,6 @@ static void outputs(int lineN, const char *sin, mqd_t q) {
 	int rc;
 	char s[LINE_MAX];
 
-	/* One of two places that makes sense to possibly pause*/
 	assert_ign((errno=pthread_mutex_lock(&mod_hemul.mx_userio)) == 0);
 	assert_ign((errno=pthread_mutex_unlock(&mod_hemul.mx_userio)) == 0);
 
@@ -182,7 +177,7 @@ static void outputs(int lineN, const char *sin, mqd_t q) {
 	} else {
 		m.d.line.len = strlen(s);
 		m.d.line.s = strdup(s);
-		INFO(("S: %s\n",m.d.line.s));
+		DBG_INF(4,("S: %s\n",m.d.line.s));
 		rc = mq_send(q, (char*)&m, MSGSIZE, 1);
 	}
 }
@@ -197,7 +192,7 @@ int hemul_run() {
 	if (hemul_args.buffer_size > 0) {
 		struct mq_attr qattr;
 
-		INFO(("Unlinking old queue name (if used). \n"));
+		DBG_INF(4,("Unlinking old queue name (if used). \n"));
 		mq_unlink(QNAME);  //Don't assert - "failure" is normal here
 
 		qattr.mq_maxmsg = 3;
@@ -222,6 +217,8 @@ int hemul_run() {
 
 	if (hemul_args.ptime >= 0) {
 		while (fgets(line, LINE_MAX, mod_hemul.fin) != NULL) {
+			assert_ign((errno=pthread_mutex_lock(&mod_hemul.mx_userio)) == 0);
+			assert_ign((errno=pthread_mutex_unlock(&mod_hemul.mx_userio)) == 0);
 			outputs(++lineN,line, q);
 			usleep(hemul_args.ptime);
 		}
@@ -238,6 +235,8 @@ int hemul_run() {
 		time_t sepoch;
 
 		while (fgets(line, LINE_MAX, mod_hemul.fin) != NULL) {
+			assert_ign((errno=pthread_mutex_lock(&mod_hemul.mx_userio)) == 0);
+			assert_ign((errno=pthread_mutex_unlock(&mod_hemul.mx_userio)) == 0);
 			/* Find out how long time to usleep */
 			rc=regexec(&mod_hemul.ts_regex->rgx, line, MAX_SUBEXP+1,
 				mtch_idxs, 0); if (rc) {
