@@ -6,7 +6,7 @@ LOCAL_PATH := .
 include common.mk
 
 LOCAL_MODULE := hemul
-LOCAL_SRC_FILES := \
+LOCAL_SRC_FILES_X := \
    doc.c \
    init.c \
    assert_np.c \
@@ -14,9 +14,15 @@ LOCAL_SRC_FILES := \
    userio.c \
    main.c
 
-LOCAL_LIBS := \
+LOCAL_SRC_FILES := \
+   test-posix.c
+
+LOCAL_LIBS_X := \
    mtime \
    mqueue
+
+LOCAL_LIBS := \
+   mqueue rt
 
 LOCAL_CFLAGS := -fPIC
 LOCAL_CFLAGS += -DNDEBUG
@@ -24,8 +30,11 @@ LOCAL_CFLAGS += -DVERBOSE_TYPE=3
 LOCAL_C_INCLUDES += ${HOME}/include
 LOCAL_LDLIBS += ${HOME}/lib
 
-LOCAL_SUBMODULES := \
+LOCAL_SUBMODULES_X := \
    libmtime \
+   libmqueue
+
+LOCAL_SUBMODULES := \
    libmqueue
 
 NDK_BUILD := ndk-build
