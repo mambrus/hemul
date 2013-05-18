@@ -1,10 +1,9 @@
 hemul
-doc.c
 files.s3
 tags
 *.o
-*.tmp
 *.d
+*.tmp
 *.a
 *.so
 *.swp
