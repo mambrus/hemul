@@ -15,6 +15,7 @@ LOCAL_SRC_FILES := \
    main.c
 
 LOCAL_LIBS := \
+   mqueue \
    mtime
 
 LOCAL_CFLAGS := -fPIC
@@ -24,6 +25,7 @@ LOCAL_C_INCLUDES += ${HOME}/include
 LOCAL_LDLIBS += ${HOME}/lib
 
 LOCAL_SUBMODULES := \
+   libmqueue \
    libmtime
 
 NDK_BUILD := ndk-build

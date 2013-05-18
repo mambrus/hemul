@@ -75,7 +75,7 @@ void *time_eventgen_thread(void* inarg) {
 	DBG_INF(3,("Thread [%s] starts... \n", __FUNCTION__));
 
 	assert_ext(usec_sleep>0);
-	assert_ext((q = mq_open( QNAME , O_WRONLY, NULL, 0 )) != (mqd_t)-1);
+	assert_ext((q = mq_open( QNAME , O_WRONLY, 0, NULL )) != (mqd_t)-1);
 
 	while (1) {
 		//assert_ext(pthread_mutex_unlock(&samplermod_data.master_event) == 0);
@@ -137,7 +137,7 @@ void *buff_dumper(void* inarg) {
 	struct qmsg m;
 
 	DBG_INF(3,("Thread [%s] starts... \n", __FUNCTION__));
-	assert_ext((q = mq_open( QNAME , O_RDONLY, NULL, 0 )) != (mqd_t)-1);
+	assert_ext((q = mq_open( QNAME , O_RDONLY, 0, NULL)) != (mqd_t)-1);
 	while (1) {
 
 		rc = mq_receive(q, (char*)&m, MSGSIZE, NULL);
