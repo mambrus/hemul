@@ -1,7 +1,17 @@
-#Source this to build for local-host using shared libraries
+#Source this to build for local-host
+
 export SAMPLER_ENV_SET='y'
-export LIB_DYNAMIC='y'
+#export LIB_DYNAMIC='y'
+unset LIB_DYNAMIC
 export LD_LIBRARY_PATH=${HOME}/lib
 export KDBG_SESSION="-r localhost:5039"
-export KDBG_BINARY="mysyms/system/bin/sampler"
-export GDB="gdb_arm"
+export KDBG_BINARY="obj/local/armeabi/hemul"
+export TCP_TAP_CMD="gdb_arm"
+#export TCP_TAP_CMD="arm-eabi-gdb"
+if ! [ -a .gdbinit ]; then
+	ln -s .gdbinit_ .gdbinit
+fi
+
+if [ "X$(which push2target.sh)" == "X" ]; then
+	export PATH=${PATH}:$(pwd)/bin
+fi

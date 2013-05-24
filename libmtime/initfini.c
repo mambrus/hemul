@@ -65,7 +65,7 @@ void __fini __mtime_fini(void) {
 			">>> using CTORS/DTORS mechanism\n");
 #endif
 	if (!mtimemod_data.isinit)
-		/* Someone allready did this in a more controlled way. Nothing to do
+		/* Someone already did this in a more controlled way. Nothing to do
 		 * here, return */
 		 return;
 	mtimemod_data.isinit=0;
