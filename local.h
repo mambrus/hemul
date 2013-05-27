@@ -89,11 +89,15 @@ struct mod_hemul
 	int fdout_user;
 	struct termios orig_termio_mode;
 	void (*orig_exit)(int status);
+	pthread_mutex_t mx_send;
+	int running;
 };
 extern struct mod_hemul mod_hemul;
 
 /* mod-global threads */
 void *userio_thread(void* inarg);
+
+void hemul_quit_dumper_thread();
 
 #endif /* local_h */
 

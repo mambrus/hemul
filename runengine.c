@@ -20,7 +20,15 @@
 #include <stdio.h>
 #include <limits.h>
 #include <unistd.h>
+#ifdef HAVE_ANDROID_OS
+#include <time64.h>
+#define TIME_T time64_t
+#define TIMEGM timegm64
+#else
 #include <time.h>
+#define TIME_T time_t
+#define TIMEGM timegm
+#endif
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
@@ -43,12 +51,16 @@
 #define LINE_MAX 1024
 #endif
 
+#ifndef MIN
+#define MIN(x,y) ((x) < (y) ? (x) : (y))
+#endif
+
 /* This should be declared in time.h but isn't. Declared temporary here (FIX
  * TBD)*/
 char *strptime(const char *buf, const char *format,
        struct tm *tm);
 
-enum msg_type {time_event, char_chunk};
+enum msg_type {time_event, char_chunk, quit_event};
 struct qmsg {
 	enum msg_type t;
 	union {
@@ -77,7 +89,7 @@ void *time_eventgen_thread(void* inarg) {
 	assert_ext(usec_sleep>0);
 	assert_ext((q = mq_open( QNAME , O_WRONLY, 0, NULL )) != (mqd_t)-1);
 
-	while (1) {
+	while (mod_hemul.running) {
 		//assert_ext(pthread_mutex_unlock(&samplermod_data.master_event) == 0);
 		usleep(usec_sleep);
 		assert_ign((errno=pthread_mutex_lock(&mod_hemul.mx_userio)) == 0);
@@ -85,8 +97,29 @@ void *time_eventgen_thread(void* inarg) {
 		if (hemul_args.debuglevel>=3) {
 		DBG_INF(4,("Timer delivers event\n"));
 		}
-		rc = mq_send(q, (char*)&m, MSGSIZE, 1);
+		assert_ign((errno=pthread_mutex_lock(&mod_hemul.mx_send)) == 0);
+		if (mod_hemul.running) {
+			rc = mq_send(q, (char*)&m, MSGSIZE, 1);
+		}
+		assert_ign((errno=pthread_mutex_unlock(&mod_hemul.mx_send)) == 0);
 	}
+	DBG_INF(3,("Thread [%s] exiting... \n", __FUNCTION__));
+}
+
+/* Sends quit event to dumper */
+void hemul_quit_dumper_thread() {
+	mqd_t q;
+	struct qmsg m = {
+		.t = quit_event,
+	};
+	int rc;
+
+	DBG_INF(3,("Going to send quit_event to dumper thread\n"));
+
+	assert_ext((q = mq_open( QNAME , O_WRONLY, 0, NULL )) != (mqd_t)-1);
+
+	rc = mq_send(q, (char*)&m, MSGSIZE, 1);
+	DBG_INF(3,("Sent quit_event to dumper thread\n"));
 }
 
 static void dump_and_flush() {
@@ -149,6 +182,10 @@ void *buff_dumper(void* inarg) {
 		} else if (	m.t == time_event ) {
 			DBG_INF(3,("Flushing buffer\n"));
 			dump_and_flush();
+		} else if (	m.t == quit_event ) {
+			DBG_INF(3,("Flushing buffer and quitting\n"));
+			dump_and_flush();
+			break;
 		}
 	}
 }
@@ -232,7 +269,7 @@ int hemul_run() {
 		struct tm tm;
 		char *lstr;
 		int usec; /*Extra temporary usec*/
-		time_t sepoch;
+		TIME_T sepoch;
 
 		while (fgets(line, LINE_MAX, mod_hemul.fin) != NULL) {
 			assert_ign((errno=pthread_mutex_lock(&mod_hemul.mx_userio)) == 0);
@@ -280,8 +317,8 @@ int hemul_run() {
 					}
 					/* Parsing is now ready. Transfer ts to curr_time*/
 					curr_time.tv_usec = usec;
-					sepoch = timegm(&tm);
-					assert_ext(sepoch != (time_t)(-1));
+					sepoch = TIMEGM(&tm);
+					assert_ext(sepoch != (TIME_T)(-1));
 					curr_time.tv_sec = sepoch;
 				}
 				if (first_round) {

@@ -61,6 +61,7 @@ int hemul_init() {
 	struct stat isbuf,osbuf;
 	char err_str[80];
 
+	assert_ext((errno = pthread_mutex_init(&mod_hemul.mx_send, 0)) == 0);
 	assert_ext((errno = pthread_mutex_init(&mod_hemul.mx_userio, 0)) == 0);
 	assert_ign(!pthread_create(
 		&mod_hemul.th_userio,
@@ -139,6 +140,7 @@ int hemul_init() {
 		mod_hemul.buff_mode = 1;
 		assert_ret((mod_hemul.obuff = malloc(hemul_args.buffer_size+3)) != NULL);
 	}
+	mod_hemul.running = 1;
 
 	return 0;
 }
@@ -147,13 +149,19 @@ int hemul_fini() {
 	int cancel_val[4];
 
 	if (mod_hemul.buff_mode){
+		assert_ign((errno=pthread_mutex_lock(&mod_hemul.mx_send)) == 0);
+		mod_hemul.running = 0;
+		/* at this point we know that "th_timer" does not and will never call "mq_send()" */
+		assert_ign((errno=pthread_mutex_unlock(&mod_hemul.mx_send)) == 0);
+		hemul_quit_dumper_thread();
+
 		if (hemul_args.buffer_timeout>0) {
-			pthread_join(mod_hemul.th_out,NULL/*&cancel_val*/);
-			pthread_cancel(mod_hemul.th_timer);
+			pthread_join(mod_hemul.th_out,NULL);
+			pthread_join(mod_hemul.th_timer,NULL);
 		} else {
 			/* Will never timeout. Kill thread, it's cancellations function
 			 * will flush buffer */
-			pthread_cancel(mod_hemul.th_out);
+			pthread_join(mod_hemul.th_out,NULL);
 		}
 	}
 	if (hemul_args.ofilename){

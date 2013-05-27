@@ -34,4 +34,3 @@ else
 include $(BUILD_STATIC_LIBRARY)
 endif
 
-include $(BUILD_SHARED_LIBRARY)
