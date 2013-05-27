@@ -18,11 +18,16 @@ LOCAL_LIBS := \
    mqueue \
    mtime
 
+ifndef LIB_DYNAMIC
+LOCAL_LIBS += \
+   rt
+endif
+
 LOCAL_CFLAGS := -fPIC
 LOCAL_CFLAGS += -DNDEBUG
 LOCAL_CFLAGS += -DVERBOSE_TYPE=3
-LOCAL_C_INCLUDES += ${HOME}/include
-LOCAL_LDLIBS += ${HOME}/lib
+LOCAL_C_INCLUDES += libmtime/include libmqueue/include
+LOCAL_LDLIBS += libmtime/lib libmqueue/lib
 
 LOCAL_SUBMODULES := \
    libmqueue \

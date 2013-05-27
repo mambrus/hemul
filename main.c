@@ -308,6 +308,7 @@ int main(int argc, char **argv) {
 	assert_ext(hemul_init()==0);
 	assert_ext(hemul_run()==0);
 	assert_ext(hemul_fini()==0);
+	get_exit()(0);
 	return 0;
 }
 
