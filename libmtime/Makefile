@@ -66,6 +66,7 @@ ${LOCAL_SUBMODULES}:
 clean:
 	$(CLEAN_MODS)
 	rm -f *.o
+	rm -f lib/*.so lib/*.a
 	rm -f *.tmp
 	rm -f *.d
 	rm -f $(LOCAL_MODULE)

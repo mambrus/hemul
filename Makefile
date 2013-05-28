@@ -28,6 +28,9 @@ LOCAL_CFLAGS += -DNDEBUG
 LOCAL_CFLAGS += -DVERBOSE_TYPE=3
 LOCAL_C_INCLUDES += libmtime/include libmqueue/include
 LOCAL_LDLIBS += libmtime/lib libmqueue/lib
+ifndef LIB_DYNAMIC
+$(LOCAL_MODULE): libmtime/lib/libmtime.a libmqueue/lib/libmqueue.a
+endif
 
 LOCAL_SUBMODULES := \
    libmqueue \
