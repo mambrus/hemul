@@ -118,7 +118,9 @@ void hemul_quit_dumper_thread() {
 
 	assert_ext((q = mq_open( QNAME , O_WRONLY, 0, NULL )) != (mqd_t)-1);
 
-	rc = mq_send(q, (char*)&m, MSGSIZE, 1);
+	do {
+		rc = mq_send(q, (char*)&m, MSGSIZE, 1);
+	} while (rc == -1 && errno == EAGAIN);
 	DBG_INF(3,("Sent quit_event to dumper thread\n"));
 }
 
