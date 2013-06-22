@@ -72,6 +72,11 @@ build: ${LOCAL_SUBMODULES} tags README.md $(LOCAL_MODULE)
 all: install
 
 ${LOCAL_SUBMODULES}:
+	@if [ ! -h $@ ] && [ ! -d $@ ]; then \
+		echo "Missing external dependency: $@" 1>&2; \
+		echo "Please read the file BUILD in root-directory for details" 1>&2; \
+		exit 1; \
+	fi
 	echo "Diving into submodule: $@"
 	$(MAKE) -e -k -C $@ install
 
