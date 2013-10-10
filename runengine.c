@@ -55,6 +55,8 @@
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #endif
 
+#define SSIZE 80
+
 /* This should be declared in time.h but isn't. Declared temporary here (FIX
  * TBD)*/
 char *strptime(const char *buf, const char *format,
@@ -264,22 +266,22 @@ int hemul_run() {
 	} else {
 		int rc;
 		regmatch_t mtch_idxs[MAX_SUBEXP+1];
-		char err_str[80];
-		char time_str[80];
+		char err_str[SSIZE];
+		char time_str[SSIZE]={0};
 		struct timeval last_time, curr_time, diff_time;
-		int i,first_round = 1;
+		int lineo,first_round = 1;
 		struct tm tm;
 		char *lstr;
 		int usec; /*Extra temporary usec*/
 		TIME_T sepoch;
 
-		while (fgets(line, LINE_MAX, mod_hemul.fin) != NULL) {
+		for (lineo=1; fgets(line, LINE_MAX, mod_hemul.fin) != NULL; lineo++) {
 			assert_ign((errno=pthread_mutex_lock(&mod_hemul.mx_userio)) == 0);
 			assert_ign((errno=pthread_mutex_unlock(&mod_hemul.mx_userio)) == 0);
 			/* Find out how long time to usleep */
 			rc=regexec(&mod_hemul.ts_regex->rgx, line, MAX_SUBEXP+1,
 				mtch_idxs, 0); if (rc) {
-				regerror(rc, &mod_hemul.ts_regex->rgx, err_str, 80);
+				regerror(rc, &mod_hemul.ts_regex->rgx, err_str, SSIZE);
 				fprintf(stderr, "Regexec faliure: %s\n", err_str);
 				return(rc);
 			} else {
@@ -292,9 +294,9 @@ int hemul_run() {
 				if (!hemul_args.ts_format) {
 					/* No format given, assume numerical (e.g. kernel-time
 					 * or numerical epoc time). */
-					sscanf(time_str,"%d.%d",
-						(int*)&curr_time.tv_sec,
-						(int*)&curr_time.tv_usec);
+					sscanf(time_str,"%ld.%lu",
+						&curr_time.tv_sec,
+						&curr_time.tv_usec);
 				} else {
 					/* Format is given. I.e. time stamp-needs to be parsed
 					 * to be understood */
@@ -303,6 +305,7 @@ int hemul_run() {
 					assert_ext( (lstr=strptime( time_str,
 						hemul_args.ts_format, &tm )) != NULL );
 					if (lstr[0]=='.') {
+						int i;
 						/*
 						* Permit reading fraction of a second. Assume this to
 						* be microsecond (6 decimal). Adjust if not. Note, this
@@ -330,7 +333,16 @@ int hemul_run() {
 				}
 				diff_time = tv_diff(&last_time,&curr_time);
 
-				assert_ext(diff_time.tv_sec>=0);
+				if (diff_time.tv_sec<0 || (diff_time.tv_sec>=0 && diff_time.tv_usec<0) ) {
+					fprintf(stderr, "Backwards log-time detected at input line "
+						"%d: [D=%ld.%ld, L=%ld.%ld, C=%ld.%ld]\n%s\n",
+						lineo,
+						diff_time.tv_sec, diff_time.tv_usec,
+						last_time.tv_sec, last_time.tv_usec,
+						curr_time.tv_sec, curr_time.tv_usec,
+						line);
+					assert_ext("Log-time goes backwards" == NULL);
+				}
 
 				tv_sleep(&diff_time);
 				memcpy(&last_time, &curr_time,
