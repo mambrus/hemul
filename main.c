@@ -63,10 +63,11 @@ const char *program_version =
 void help(FILE* file, int flags) {
 	if (file && flags & HELP_USAGE) {
 		fprintf(file, "%s",
-			"Usage: hemul [-DlvhuV] [-d level] [-p ptime]\n"
+			"Usage: hemul [-DlvhuVE] [-d level] [-p ptime]\n"
 			"            [--debuglevel=level] [--documentation]\n"
-			"            [--period=ptime] [--outfile=file-name] [--verbose]\n"
-			"            [--help] [--usage] [--version]\n");
+			"            [--period=ptime] [--outfile=file-name]\n"
+			"            [--pipe] [--echo]\n"
+			"            [--verbose] [--help] [--usage] [--version]\n");
 		fflush(file);
 	}
 	if (file && flags & HELP_LONG) {
@@ -82,6 +83,9 @@ void help(FILE* file, int flags) {
 			"                             Default period-time is ["xstr(DEF_PERIOD)"] uS\n"
 			"  -P, --pipe                 Output is a named pipe.\n"
 			"                             Created if missing, requires -o\n"
+			"  -E, --echo                 Also echo to std-out. Usefull when outdata goes\n"
+			"                             to something unvisible (file, pipe or socket \n"
+			"                             e.t.a.). Recommended when debugging the consumer\n"
 			"  -n, --linenum=sepstr       Each output is perpended with line-number.\n"
 			"                             String <sepstr> is the separator to the rest\n"
 			"                             of the line.\n"
@@ -158,6 +162,9 @@ static void parse_opt(
 		case 'P':
 			hemul_args->piped_output = 1;
 			break;
+		case 'E':
+			hemul_args->echo = 1;
+			break;
 
 		case 'd':
 			hemul_args->debuglevel = arg ? atoi (arg) : 0;
@@ -210,6 +217,7 @@ static struct option long_options[] = {
 	{"debuglevel",    required_argument, 0, 'd'},
 	{"period",        required_argument, 0, 'p'},
 	{"pipe",          no_argument,       0, 'P'},
+	{"echo",          no_argument,       0, 'E'},
 	{"outfile",       required_argument, 0, 'o'},
 	{"infile",        required_argument, 0, 'i'},
 	{"regex",         required_argument, 0, 'R'},
@@ -238,6 +246,7 @@ struct hemul_args hemul_args = {
 		.idx          = DEF_SUBEXPR,
 	},
 	.ts_format        = NULL,
+	.echo             = 0,
 };
 
 int opt_errno = 0;
@@ -252,7 +261,7 @@ int opt_errno = 0;
 int main(int argc, char **argv) {
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "DuhvVPd:p:o:i:R:r:B:b:F:n:",
+		int c = getopt_long(argc, argv, "DuhvVPd:p:o:i:R:r:B:b:F:n:E",
 			long_options, &option_index);
 		/* Detect the end of the options. */
 		if (c == -1)
@@ -282,6 +291,8 @@ int main(int argc, char **argv) {
 		hemul_args.ts_regex.idx));
 	INFO(("In-line time-stamp format:         %s\n",
 		hemul_args.ts_format));
+	INFO(("Stdout echo:         %s\n",
+		hemul_args.echo));
 	INFO(("\n"));
 
 	OPT_CHECK(hemul_args.ts_format && !hemul_args.ts_regex.str);

@@ -91,6 +91,7 @@ struct mod_hemul
 	void (*orig_exit)(int status);
 	pthread_mutex_t mx_send;
 	int running;
+	int echo;
 };
 extern struct mod_hemul mod_hemul;
 

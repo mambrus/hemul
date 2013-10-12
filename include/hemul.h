@@ -42,6 +42,7 @@ struct hemul_args
 	int ptime;
 	int debuglevel;
 	int piped_output;
+	int echo;
 	char *ofilename;
 	char *ifilename;
 	struct ts_regex ts_regex;

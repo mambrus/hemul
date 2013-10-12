@@ -53,6 +53,7 @@ struct mod_hemul mod_hemul = {
 	.fdout_user = 1,
 	.fin_user = NULL,
 	.fout_user = NULL,
+	.echo=0,
 };
 
 int hemul_init() {
@@ -140,6 +141,7 @@ int hemul_init() {
 		mod_hemul.buff_mode = 1;
 		assert_ret((mod_hemul.obuff = malloc(hemul_args.buffer_size+3)) != NULL);
 	}
+	mod_hemul.echo = hemul_args.echo;
 	mod_hemul.running = 1;
 
 	return 0;

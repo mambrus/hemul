@@ -129,6 +129,9 @@ void hemul_quit_dumper_thread() {
 static void dump_and_flush() {
 	if (mod_hemul.curr_sz>0) {
 		write(mod_hemul.fdout, mod_hemul.obuff, mod_hemul.curr_sz);
+		if (mod_hemul.echo) {
+			printf("%s", mod_hemul.obuff);
+		}
 		mod_hemul.curr_sz=0;
 		if (hemul_args.debuglevel>=0)
 			memset(mod_hemul.obuff, 0, hemul_args.buffer_size+3);
@@ -215,6 +218,9 @@ static void outputs(int lineN, const char *sin, mqd_t q) {
 		/*Simple case, just get rid of the data to wherever it's supposed to
 		 * go. Make sure output is not buffered. */
 		write(mod_hemul.fdout, s, strnlen(s,LINE_MAX));
+		if (mod_hemul.echo) {
+			printf("%s", s);
+		}
 	} else {
 		m.d.line.len = strlen(s);
 		m.d.line.s = strdup(s);
